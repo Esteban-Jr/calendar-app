@@ -1,6 +1,14 @@
 # My Calendar
 
+**Live: https://calendar.206.189.176.206.sslip.io** (open it on your phone, then add it to your home screen)
+
 A personal calendar web app that runs on top of my own [Calendar API](https://github.com/Esteban-Jr/calendar-api). Built with React and Vite, works on desktop and phone, and can be installed to the home screen.
+
+## Try it on a phone
+
+1. Open https://calendar.206.189.176.206.sslip.io in Safari (iPhone) or Chrome (Android).
+2. Tap **Sign up** to create an account. A 6-digit code is sent to your email.
+3. **iPhone:** tap Share, then *Add to Home Screen*. **Android:** open the menu, then *Install app*.
 
 ## What it does
 
