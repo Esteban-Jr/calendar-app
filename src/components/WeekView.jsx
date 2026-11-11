@@ -82,6 +82,7 @@ export default function WeekView({ cursor, events, today, now, holidays, onAddAt
                 >
                   {placed.map(({ event, start, end, lane, lanes, dayStart }) => {
                     const color = colorOf(event)
+                    const height = Math.max(((end - start) / HOUR_MS) * HOUR_PX - 2, 20)
                     return (
                       <button
                         key={event.id}
@@ -90,7 +91,9 @@ export default function WeekView({ cursor, events, today, now, holidays, onAddAt
                         title={`${event.title}: ${timeLabel(event, day).range}`}
                         style={{
                           top: ((start - dayStart) / HOUR_MS) * HOUR_PX,
-                          height: Math.max(((end - start) / HOUR_MS) * HOUR_PX - 2, 20),
+                          height,
+                          // How many whole 12px title lines fit (used on phones).
+                          '--lines': Math.max(Math.floor((height - 4) / 12), 1),
                           left: `calc(${(lane / lanes) * 100}% + 2px)`,
                           width: `calc(${100 / lanes}% - 4px)`,
                           background: color.bg,
