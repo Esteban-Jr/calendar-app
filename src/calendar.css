@@ -8,12 +8,17 @@
     radial-gradient(50% 40% at 100% 0%, #dccfff 0%, transparent 60%),
     linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
   background-attachment: fixed;
+  /* The page itself never scrolls sideways; wide parts (like the week grid)
+     scroll inside their own box instead. `clip` (not `hidden`) so nothing
+     becomes a scroll box and sticky headers keep working. */
+  overflow-x: clip;
 }
 
 .topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   max-width: 1180px;
   margin: 0 auto;
   padding: 14px 16px 6px;
@@ -24,6 +29,36 @@
   align-items: center;
   gap: 10px;
   font-weight: 600;
+}
+
+.topbar .btn-text {
+  white-space: nowrap;
+}
+
+/* Small phones: tighten the top bar so it fits on one line. */
+@media (max-width: 380px) {
+  .topbar {
+    padding-inline: 12px;
+  }
+
+  .top-actions {
+    gap: 2px;
+  }
+
+  .topbar .btn-text {
+    padding-inline: 8px;
+  }
+
+  .topbar .holiday-toggle {
+    padding: 0 12px;
+  }
+}
+
+/* Tiny phones: no room for the name next to the buttons, keep just the logo. */
+@media (max-width: 359px) {
+  .brand-name {
+    display: none;
+  }
 }
 
 .mark {
@@ -562,6 +597,8 @@ button.cell-num:hover {
 
 .week {
   overflow-x: auto;
+  /* Swiping to the end of the grid doesn't drag the page or go "back". */
+  overscroll-behavior-x: contain;
   background: var(--surface);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
