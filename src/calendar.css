@@ -786,6 +786,91 @@ button.cell-num:hover {
   border-radius: 50%;
 }
 
+/* Phones: the whole week fits on the screen instead of scrolling sideways.
+   Events become narrow blocks with just the title; tap one for the details. */
+@media (max-width: 760px) {
+  .week-inner {
+    min-width: 0;
+  }
+
+  .week-head,
+  .week-grid,
+  .week-allday {
+    grid-template-columns: 40px repeat(7, minmax(0, 1fr));
+  }
+
+  .week-day {
+    padding: 8px 0;
+  }
+
+  .week-day span {
+    font-size: 0.62rem;
+    letter-spacing: 0;
+  }
+
+  .week-day b {
+    width: 28px;
+    height: 28px;
+    font-size: 0.9rem;
+  }
+
+  .hours span {
+    right: 5px;
+    font-size: 0.6rem;
+    white-space: nowrap;
+  }
+
+  .allday-label {
+    padding-right: 4px;
+    font-size: 0.58rem;
+  }
+
+  .allday-cell {
+    padding: 2px 1px 4px;
+  }
+
+  .allday-cell .holiday {
+    height: 6px;
+    padding: 0;
+    font-size: 0;
+    background: var(--gold-bg);
+    border: 0;
+    border-radius: 3px;
+    box-shadow: inset 0 0 0 1px var(--gold-edge);
+  }
+
+  /* Small left padding only: when several events overlap, each block can
+     be just a few pixels wide and padding would push it past its day. */
+  .block {
+    padding: 2px 0 2px 2px;
+    font-size: 0.6rem;
+    line-height: 12px;
+    border-left-width: 2px;
+    border-radius: 5px;
+    container-type: inline-size;
+  }
+
+  /* Titles wrap between words; whole lines only, so a short event shows
+     one clean line instead of half of the next. */
+  .block b {
+    display: -webkit-box;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: var(--lines);
+  }
+
+  .block span {
+    display: none;
+  }
+
+  /* Too narrow to read (several events at once): just the coloured block. */
+  @container (max-width: 22px) {
+    .block b {
+      display: none;
+    }
+  }
+}
+
 /* ---------- Day view ---------- */
 
 .dayview {
