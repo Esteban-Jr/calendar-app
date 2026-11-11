@@ -186,7 +186,7 @@ export default function Calendar({ onLogout }) {
   return (
     <div className="app">
       <header className="topbar">
-        <div className="brand"><LogoMark /> My Calendar</div>
+        <div className="brand"><LogoMark /> <span className="brand-name">My Calendar</span></div>
         <div className="top-actions">
           <ReminderBell />
           <button type="button" className={showHolidays ? 'pill holiday-toggle on' : 'pill holiday-toggle'} aria-pressed={showHolidays} onClick={toggleHolidays}>
