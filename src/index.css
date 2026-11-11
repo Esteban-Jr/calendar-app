@@ -130,6 +130,17 @@ input::placeholder {
   color: #9aa9c2;
 }
 
+/* iPhone Safari zooms the whole page in when you tap a box whose text is
+   smaller than 16px, which makes windows look too big and lets the page
+   slide sideways. 16px on phones stops that. */
+@media (max-width: 760px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
 input[type='text']:focus,
 input[type='password']:focus {
   background: #fff;
