@@ -1699,3 +1699,63 @@ fieldset.plain:disabled .swatch {
   font-size: 0.82rem;
   color: #1f7a4d;
 }
+
+/* ---------- Account ---------- */
+
+/* The round button with my initial, at the end of the top bar. */
+.pill.account-btn {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #7db4ff, var(--blue));
+  border-color: transparent;
+}
+
+.account-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #edf2fb;
+}
+
+.account-row > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.account-label {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.account-value {
+  display: block;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.account-hint {
+  margin: 6px 0 4px;
+  font-size: 0.82rem;
+}
+
+.account-notice {
+  margin: 8px 0 0;
+  font-size: 0.86rem;
+  color: #1f7a4d;
+}
+
+.account-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}

@@ -113,12 +113,16 @@ export const listHolidays = (year) =>
     () => savedValue(`holidays-${year}`),
   )
 
+// Me: { id, username, email, next_username_change } (null when I can change it now).
 export const getMe = () =>
   withSavedCopy(
     () => request('/api/me/'),
     (me) => saveValue('me', me),
     () => savedValue('me'),
   )
+
+// Change my username (once a week). Returns the new `me`.
+export const updateMe = (data) => request('/api/me/', { method: 'PATCH', body: data })
 
 // Friends: { friends, incoming, outgoing }, each a list of { id, username }.
 // `id` is the friendship (or request) id used to accept or remove it.
