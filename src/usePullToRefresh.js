@@ -17,10 +17,12 @@ function insideScrolledBox(element) {
 // "Pull down to refresh", like in a browser, for touch screens.
 // Only starts when the page is at the very top, the finger moves mostly
 // downwards, and no window (like Add event) is open.
-// Returns how far the user has pulled (in px) and whether it's refreshing.
+// Returns how far the user has pulled (in px), whether a finger is pulling
+// right now, and whether it's refreshing.
 export default function usePullToRefresh(onRefresh) {
   const [pull, setPull] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
+  const [dragging, setDragging] = useState(false) // finger down and pulling
   const latest = useRef(onRefresh)
   const busy = useRef(false)
 
@@ -66,6 +68,7 @@ export default function usePullToRefresh(onRefresh) {
           return
         }
         pulling = true
+        setDragging(true)
       }
       event.preventDefault() // no page bounce while pulling
       distance = Math.min(MAX_PULL, (dy - DEADZONE) * 0.5)
@@ -77,6 +80,7 @@ export default function usePullToRefresh(onRefresh) {
       const pulledEnough = pulling && distance >= PULL_THRESHOLD
       const wasPulling = pulling
       reset()
+      setDragging(false)
       if (!wasPulling) return
       if (!pulledEnough) {
         setPull(0)
@@ -96,6 +100,7 @@ export default function usePullToRefresh(onRefresh) {
     function onCancel() {
       if (startY === null) return
       reset()
+      setDragging(false)
       if (!busy.current) setPull(0)
     }
 
@@ -112,5 +117,5 @@ export default function usePullToRefresh(onRefresh) {
     }
   }, [])
 
-  return { pull, refreshing }
+  return { pull, dragging, refreshing }
 }

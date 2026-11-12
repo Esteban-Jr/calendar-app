@@ -195,7 +195,12 @@ export default function Calendar({ onLogout }) {
     }
   }, [])
 
-  const { pull, refreshing } = usePullToRefresh(refreshAll)
+  const { pull, dragging, refreshing } = usePullToRefresh(refreshAll)
+  // While pulling, the whole page slides down with the finger, leaving room
+  // for the spinner above it. It moves with `top`, not `transform`: a
+  // transformed box would drag the buttons pinned to the screen (like Friends
+  // on phones) along with it.
+  const pageShift = pull > 0 ? { top: `${pull}px` } : undefined
 
   function markNotesRead() {
     markNotificationsRead()
@@ -288,97 +293,99 @@ export default function Calendar({ onLogout }) {
 
   return (
     <div className="app">
-      <PullIndicator pull={pull} refreshing={refreshing} />
-      <header className="topbar">
-        <div className="brand"><LogoMark /> <span className="brand-name">My Calendar</span></div>
-        <div className="top-actions">
-          <FriendsButton waiting={friendData?.incoming.length ?? 0} onClick={() => setShowFriends(true)} />
-          <NotificationsButton unread={noteData?.unread ?? 0} onClick={() => setShowNotes(true)} />
-          <button type="button" className={showHolidays ? 'pill holiday-toggle on' : 'pill holiday-toggle'} aria-pressed={showHolidays} onClick={toggleHolidays}>
-            Holidays
-          </button>
-          <button type="button" className="btn-text" onClick={onLogout}>Sign out</button>
-        </div>
-      </header>
-
-      <main className="shell">
-        <div className="toolbar">
-          <div className="nav">
-            <button type="button" className="icon-btn" aria-label={`Previous ${unit}`} onClick={() => step(-1)}>‹</button>
-            <button type="button" className="icon-btn" aria-label={`Next ${unit}`} onClick={() => step(1)}>›</button>
-            <button type="button" className="pill" onClick={() => setCursor(today)}>Today</button>
+      <PullIndicator pull={pull} dragging={dragging} refreshing={refreshing} />
+      <div className={dragging ? 'pull-shift' : 'pull-shift settle'} style={pageShift}>
+        <header className="topbar">
+          <div className="brand"><LogoMark /> <span className="brand-name">My Calendar</span></div>
+          <div className="top-actions">
+            <FriendsButton waiting={friendData?.incoming.length ?? 0} onClick={() => setShowFriends(true)} />
+            <NotificationsButton unread={noteData?.unread ?? 0} onClick={() => setShowNotes(true)} />
+            <button type="button" className={showHolidays ? 'pill holiday-toggle on' : 'pill holiday-toggle'} aria-pressed={showHolidays} onClick={toggleHolidays}>
+              Holidays
+            </button>
+            <button type="button" className="btn-text" onClick={onLogout}>Sign out</button>
           </div>
-          <h1 className="title">{titleFor(view, cursor)}</h1>
-          <div className="switch" role="tablist" aria-label="View">
-            {VIEWS.map(([key, label]) => (
-              <button
-                key={key}
-                type="button"
-                role="tab"
-                aria-selected={view === key}
-                className={view === key ? 'on' : ''}
-                onClick={() => setView(key)}
-              >
-                {label}
-              </button>
-            ))}
+        </header>
+
+        <main className="shell">
+          <div className="toolbar">
+            <div className="nav">
+              <button type="button" className="icon-btn" aria-label={`Previous ${unit}`} onClick={() => step(-1)}>‹</button>
+              <button type="button" className="icon-btn" aria-label={`Next ${unit}`} onClick={() => step(1)}>›</button>
+              <button type="button" className="pill" onClick={() => setCursor(today)}>Today</button>
+            </div>
+            <h1 className="title">{titleFor(view, cursor)}</h1>
+            <div className="switch" role="tablist" aria-label="View">
+              {VIEWS.map(([key, label]) => (
+                <button
+                  key={key}
+                  type="button"
+                  role="tab"
+                  aria-selected={view === key}
+                  className={view === key ? 'on' : ''}
+                  onClick={() => setView(key)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {!offline && <button type="button" className="btn small" onClick={() => openNew(cursor)}>+ Add event</button>}
           </div>
-          {!offline && <button type="button" className="btn small" onClick={() => openNew(cursor)}>+ Add event</button>}
-        </div>
 
-        {offline && (
-          <p className="banner offline" role="status">
-            You're offline. Showing your saved calendar; adding and editing will work again when you're back online.
-          </p>
-        )}
-        {loadError && <p className="banner" role="alert">{loadError}</p>}
-        {showHolidays && holidayError && !offline && (
-          <p className="banner" role="status">Couldn't load the holidays right now. Your events are fine.</p>
-        )}
+          {offline && (
+            <p className="banner offline" role="status">
+              You're offline. Showing your saved calendar; adding and editing will work again when you're back online.
+            </p>
+          )}
+          {loadError && <p className="banner" role="alert">{loadError}</p>}
+          {showHolidays && holidayError && !offline && (
+            <p className="banner" role="status">Couldn't load the holidays right now. Your events are fine.</p>
+          )}
 
-        {view === 'month' && (
-          <>
-            <MonthView
+          {view === 'month' && (
+            <>
+              <MonthView
+                cursor={cursor}
+                events={shownEvents}
+                today={today}
+                holidays={holidays}
+                onSelect={setCursor}
+                onOpenDay={openDay}
+                onAdd={addIfOnline}
+                onEdit={edit}
+              />
+              <Agenda day={cursor} events={shownEvents} holidays={holidays} onAdd={addIfOnline} onEdit={edit} />
+            </>
+          )}
+
+          {view === 'week' && (
+            <WeekView
+              cursor={cursor}
+              events={shownEvents}
+              today={today}
+              now={now}
+              holidays={holidays}
+              onAddAt={addIfOnline}
+              onEdit={edit}
+              onOpenDay={openDay}
+            />
+          )}
+
+          {view === 'day' && (
+            <DayView
               cursor={cursor}
               events={shownEvents}
               today={today}
               holidays={holidays}
               onSelect={setCursor}
-              onOpenDay={openDay}
               onAdd={addIfOnline}
               onEdit={edit}
             />
-            <Agenda day={cursor} events={shownEvents} holidays={holidays} onAdd={addIfOnline} onEdit={edit} />
-          </>
-        )}
+          )}
+        </main>
 
-        {view === 'week' && (
-          <WeekView
-            cursor={cursor}
-            events={shownEvents}
-            today={today}
-            now={now}
-            holidays={holidays}
-            onAddAt={addIfOnline}
-            onEdit={edit}
-            onOpenDay={openDay}
-          />
-        )}
-
-        {view === 'day' && (
-          <DayView
-            cursor={cursor}
-            events={shownEvents}
-            today={today}
-            holidays={holidays}
-            onSelect={setCursor}
-            onAdd={addIfOnline}
-            onEdit={edit}
-          />
-        )}
-      </main>
-
-      <Footer />
+        <Footer />
+      </div>
 
       {!offline && <button type="button" className="fab" aria-label="Add event" onClick={() => openNew(cursor)}>+</button>}
 

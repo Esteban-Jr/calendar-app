@@ -12,9 +12,9 @@ function Arrow() {
 
 // The round button that slides down from the top while you pull to refresh.
 // The arrow turns as you pull and becomes a spinner while it loads.
-export default function PullIndicator({ pull, refreshing }) {
+export default function PullIndicator({ pull, dragging, refreshing }) {
   const ready = pull >= PULL_THRESHOLD
-  const className = ['pull-indicator', refreshing && 'spinning', ready && 'ready'].filter(Boolean).join(' ')
+  const className = ['pull-indicator', !dragging && 'settle', refreshing && 'spinning', ready && 'ready'].filter(Boolean).join(' ')
   return (
     <>
       <div

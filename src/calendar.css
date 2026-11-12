@@ -1531,6 +1531,21 @@ fieldset.plain:disabled .swatch {
   pointer-events: none;
 }
 
+/* The page slides back up smoothly when you let go (but follows the finger
+   exactly while pulling). */
+.pull-shift {
+  position: relative;
+  top: 0;
+}
+
+.pull-shift.settle {
+  transition: top 0.25s ease;
+}
+
+.pull-indicator.settle {
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
 .pull-indicator.ready,
 .pull-indicator.spinning {
   color: var(--blue);
