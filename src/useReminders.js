@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { listEvents } from './api.js'
 import { formatTime } from './dates.js'
+import { pushIsOn } from './push.js'
 import { describeStart, dueReminders, loadFired, saveFired, showSystemNotification } from './reminders.js'
 
 const MINUTE = 60 * 1000
@@ -14,6 +15,10 @@ const CHECK_EVERY = 15 * 1000 // look for reminders that have come due
 export default function useReminders({ me, refreshKey }) {
   const [banners, setBanners] = useState([])
   const upcoming = useRef([])
+  // With push on, the server sends the phone notifications (even when the app
+  // is closed), so the app only shows its own banner. Otherwise a reminder
+  // pushed while the app was closed would pop up again when it's opened.
+  const pushOn = useRef(false)
 
   const dismiss = useCallback((key) => {
     setBanners((list) => list.filter((banner) => banner.key !== key))
@@ -32,7 +37,7 @@ export default function useReminders({ me, refreshKey }) {
         const when = describeStart(startMs, now)
         const detail = [formatTime(event.start), event.location].filter(Boolean).join(' · ')
         setBanners((list) => [...list, { key, event, title: event.title, when, detail }])
-        showSystemNotification(event.title, `${when} · ${detail}`, key)
+        if (!pushOn.current) showSystemNotification(event.title, `${when} · ${detail}`, key)
       }
       saveFired(fired)
     }
@@ -40,6 +45,7 @@ export default function useReminders({ me, refreshKey }) {
     async function refresh() {
       try {
         const from = new Date(Date.now() - 5 * MINUTE)
+        pushOn.current = await pushIsOn().catch(() => false)
         upcoming.current = await listEvents(from, new Date(Date.now() + LOOK_AHEAD))
         check()
       } catch {
