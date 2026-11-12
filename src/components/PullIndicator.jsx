@@ -1,5 +1,7 @@
 import { PULL_THRESHOLD } from '../usePullToRefresh.js'
 
+const LIFT = 64 // how far above the top of the page the circle sits
+
 function Arrow() {
   return (
     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.2"
@@ -20,7 +22,7 @@ export default function PullIndicator({ pull, dragging, refreshing }) {
       <div
         className={className}
         style={{
-          transform: `translate(-50%, ${pull - 44}px) rotate(${refreshing ? 0 : (pull / PULL_THRESHOLD) * 270}deg)`,
+          transform: `translate(-50%, ${pull - LIFT}px) rotate(${refreshing ? 0 : (pull / PULL_THRESHOLD) * 270}deg)`,
           opacity: pull > 0 ? Math.min(1, pull / 30) : 0,
         }}
         aria-hidden="true"
