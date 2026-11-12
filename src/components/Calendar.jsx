@@ -17,9 +17,13 @@ import MonthView from './MonthView.jsx'
 import ReminderBanners from './ReminderBanners.jsx'
 import NotificationsButton from './NotificationsButton.jsx'
 import NotificationsModal from './NotificationsModal.jsx'
+import PullIndicator from './PullIndicator.jsx'
 import WeekView from './WeekView.jsx'
+import usePullToRefresh from '../usePullToRefresh.js'
 import useReminders from '../useReminders.js'
 import '../calendar.css'
+
+const LIVE_REFRESH_EVERY = 30 * 1000 // while the app is on screen
 
 const VIEWS = [
   ['month', 'Month'],
@@ -91,26 +95,38 @@ export default function Calendar({ onLogout }) {
   const rangeStart = from.getTime()
   const rangeEnd = to.getTime()
 
-  useEffect(() => {
-    let cancelled = false
-    listEvents(new Date(rangeStart), new Date(rangeEnd))
+  // Loads the events for the dates on screen. Resolves to true if they changed.
+  // Each load gets a number, so an older, slower answer (for dates you've
+  // already moved away from) never replaces a newer one.
+  const eventsRequest = useRef(0)
+  const lastEvents = useRef('')
+  function loadEvents() {
+    const id = ++eventsRequest.current
+    return listEvents(new Date(rangeStart), new Date(rangeEnd))
       .then((data) => {
-        if (cancelled) return
-        setEvents(data)
+        if (id !== eventsRequest.current) return false
         setLoadError('')
+        const json = JSON.stringify(data)
+        if (json === lastEvents.current) return false // nothing new: don't redraw
+        lastEvents.current = json
+        setEvents(data)
+        return true
       })
       .catch((err) => {
-        if (cancelled || err.status === 401) return
+        if (id !== eventsRequest.current || err.status === 401) return false
         setLoadError(
           isOffline()
             ? "You're offline, and these dates haven't been saved on this device yet."
             : "Couldn't load your events. Check your connection and try again.",
         )
+        return false
       })
-    return () => {
-      cancelled = true
-    }
-  }, [rangeStart, rangeEnd, reloadKey])
+  }
+
+  // Load again when the dates on screen change or something was saved.
+  useEffect(() => {
+    loadEvents()
+  }, [rangeStart, rangeEnd, reloadKey]) // eslint-disable-line react-hooks/exhaustive-deps -- loadEvents only uses these
 
   useEffect(() => {
     getMe().then(setMe).catch(() => {}) // a 401 is handled globally; anything else just means no "shared" marks
@@ -128,18 +144,58 @@ export default function Calendar({ onLogout }) {
     loadFriends()
   }, [reloadKey])
 
-  // Notifications ({ unread, notifications }). Looked at again whenever the
-  // app comes back to the front, since they can arrive while it's closed.
+  // Notifications ({ unread, notifications }).
   const [noteData, setNoteData] = useState(null)
   const [showNotes, setShowNotes] = useState(false)
+  const loadNotes = () => getNotifications().then(setNoteData).catch(() => {})
 
   useEffect(() => {
-    const load = () => getNotifications().then(setNoteData).catch(() => {})
-    const onVisible = () => document.visibilityState === 'visible' && load()
-    load()
-    document.addEventListener('visibilitychange', onVisible)
-    return () => document.removeEventListener('visibilitychange', onVisible)
+    loadNotes()
   }, [reloadKey])
+
+  // ---------- Keeping the screen up to date ----------
+  // Other people can send friend requests, share events or notify you while
+  // the app is open, so everything is loaded again: every so often while the
+  // app is on screen, when it comes back to the front, when the internet comes
+  // back, when a phone notification arrives, and when you pull down.
+  const [remindersKey, setRemindersKey] = useState(0)
+  const lastRefresh = useRef(0)
+  async function refreshAll() {
+    lastRefresh.current = Date.now()
+    const [eventsChanged] = await Promise.all([loadEvents(), loadFriends(), loadNotes()])
+    if (eventsChanged) setRemindersKey((n) => n + 1) // a new event may need a reminder soon
+  }
+
+  const latestRefresh = useRef(refreshAll)
+  useEffect(() => {
+    latestRefresh.current = refreshAll
+  })
+
+  useEffect(() => {
+    const onScreen = () => document.visibilityState === 'visible'
+    // Coming back to the front can fire several of these at once: refresh once.
+    const refreshNow = () => {
+      if (onScreen() && Date.now() - lastRefresh.current > 2000) latestRefresh.current()
+    }
+    const timer = setInterval(() => onScreen() && latestRefresh.current(), LIVE_REFRESH_EVERY)
+    const fromServiceWorker = (event) => event.data?.type === 'refresh' && latestRefresh.current()
+
+    document.addEventListener('visibilitychange', refreshNow)
+    window.addEventListener('focus', refreshNow)
+    window.addEventListener('pageshow', refreshNow)
+    window.addEventListener('online', refreshNow)
+    navigator.serviceWorker?.addEventListener('message', fromServiceWorker)
+    return () => {
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', refreshNow)
+      window.removeEventListener('focus', refreshNow)
+      window.removeEventListener('pageshow', refreshNow)
+      window.removeEventListener('online', refreshNow)
+      navigator.serviceWorker?.removeEventListener('message', fromServiceWorker)
+    }
+  }, [])
+
+  const { pull, refreshing } = usePullToRefresh(refreshAll)
 
   function markNotesRead() {
     markNotificationsRead()
@@ -153,7 +209,7 @@ export default function Calendar({ onLogout }) {
     [events, me],
   )
 
-  const { banners, dismiss } = useReminders({ me, refreshKey: reloadKey })
+  const { banners, dismiss } = useReminders({ me, refreshKey: `${reloadKey}-${remindersKey}` })
 
   // Holidays come one year at a time. A month grid can reach into the next or
   // previous year, so load every year the screen touches, once each.
@@ -232,6 +288,7 @@ export default function Calendar({ onLogout }) {
 
   return (
     <div className="app">
+      <PullIndicator pull={pull} refreshing={refreshing} />
       <header className="topbar">
         <div className="brand"><LogoMark /> <span className="brand-name">My Calendar</span></div>
         <div className="top-actions">
