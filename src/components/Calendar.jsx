@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'reac
 import { getFriends, getMe, listEvents, listHolidays } from '../api.js'
 import { pickLeastUsed } from '../colors.js'
 import { isOffline, subscribeOffline } from '../offline.js'
+import { enablePush } from '../push.js'
 import {
   addDays, addMonths, formatLongDate, formatMonthYear, formatWeekRange, monthGrid, startOfDay,
   weekDays,
@@ -117,6 +118,9 @@ export default function Calendar({ onLogout }) {
 
   useEffect(() => {
     getMe().then(setMe).catch(() => {}) // a 401 is handled globally; anything else just means no "shared" marks
+    // Notifications already allowed on this device: make sure the server can push
+    // reminders here (and knows it's this person signed in now).
+    enablePush().catch(() => {})
   }, [])
 
   // Friends and friend requests ({ friends, incoming, outgoing }).

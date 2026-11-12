@@ -132,6 +132,13 @@ export const sendFriendRequest = (username) => request('/api/friends/', { method
 export const acceptFriend = (id) => request(`/api/friends/${id}/accept/`, { method: 'POST' })
 export const removeFriend = (id) => request(`/api/friends/${id}/`, { method: 'DELETE' })
 
+// Push notifications (reminders while the app is closed).
+export const getPushKey = () => request('/api/push/key/')
+export const savePushSubscription = (subscription) =>
+  request('/api/push/subscribe/', { method: 'POST', body: subscription })
+export const deletePushSubscription = (endpoint) =>
+  request('/api/push/unsubscribe/', { method: 'POST', body: { endpoint } })
+
 export const createEvent = (data) => request('/api/events/', { method: 'POST', body: data })
 export const updateEvent = (id, data) => request(`/api/events/${id}/`, { method: 'PATCH', body: data })
 export const deleteEvent = (id) => request(`/api/events/${id}/`, { method: 'DELETE' })
