@@ -1656,3 +1656,46 @@ fieldset.plain:disabled .swatch {
   font-size: 0.74rem;
   opacity: 1;
 }
+
+/* ---------- Answers to my invites (in my own event) ---------- */
+
+.answers {
+  margin: 0 0 4px;
+  padding: 0;
+  list-style: none;
+}
+
+.answer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 4px 0;
+  font-size: 0.88rem;
+  border-bottom: 1px solid #edf2fb;
+}
+
+.answer b {
+  min-width: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.answer-status {
+  flex: 1;
+  color: var(--muted);
+}
+
+.answer.accepted .answer-status {
+  color: #1f7a4d;
+}
+
+.answer.declined .answer-status {
+  color: var(--danger);
+}
+
+.answers-note {
+  margin: 6px 0 0;
+  font-size: 0.82rem;
+  color: #1f7a4d;
+}

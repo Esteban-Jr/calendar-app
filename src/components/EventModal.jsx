@@ -1,9 +1,60 @@
 import { useEffect, useState } from 'react'
 import {
-  acceptInvite, createEvent, declineInvite, deleteEvent, errorMessages, leaveEvent, updateEvent,
+  acceptInvite, createEvent, declineInvite, deleteEvent, errorMessages, inviteAgain, leaveEvent, updateEvent,
 } from '../api.js'
 import { CAKE, COLOR_KEYS } from '../colors.js'
 import { toInputValue } from '../dates.js'
+
+// How each person answered an invite to my event.
+const ANSWER = {
+  accepted: { icon: '✓', text: 'Going' },
+  waiting: { icon: '⏳', text: 'Waiting for an answer' },
+  declined: { icon: '✗', text: 'Declined' },
+}
+
+// The owner's list of who's going: each person's answer, and "Invite again"
+// for anyone who declined.
+function Answers({ eventId, shares, offline, onChange }) {
+  const [busy, setBusy] = useState('')
+  const [message, setMessage] = useState('')
+
+  async function again(username) {
+    setBusy(username)
+    setMessage('')
+    try {
+      const updated = await inviteAgain(eventId, username)
+      onChange(updated.shares)
+      setMessage(`Sent ${username} a new invite.`)
+    } catch (err) {
+      setMessage(errorMessages(err).join(' '))
+    } finally {
+      setBusy('')
+    }
+  }
+
+  return (
+    <div className="field">
+      <span>Answers</span>
+      <ul className="answers">
+        {shares.map(({ username, status }) => (
+          <li key={username} className={`answer ${status}`}>
+            <b>{username}</b>
+            <span className="answer-status">
+              <span aria-hidden="true">{ANSWER[status].icon} </span>
+              {ANSWER[status].text}
+            </span>
+            {status === 'declined' && !offline && (
+              <button type="button" className="btn-text" disabled={busy === username} onClick={() => again(username)}>
+                Invite again
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
+      {message && <p className="answers-note" role="status">{message}</p>}
+    </div>
+  )
+}
 
 const REMINDERS = [
   ['', 'No reminder'],
@@ -33,6 +84,8 @@ export default function EventModal({ event, me, offline, friends = [], onOpenFri
   const [reminder, setReminder] = useState(event?.reminder == null ? '' : String(event.reminder))
   const [color, setColor] = useState(event?.color ?? defaults.color)
   const [sharedWith, setSharedWith] = useState(event?.shared_with ?? [])
+  // Everyone's answer so far (my own events only): [{ username, status }]
+  const [shares, setShares] = useState(event?.shares ?? [])
   const [errors, setErrors] = useState([])
   const [saving, setSaving] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
@@ -235,6 +288,10 @@ export default function EventModal({ event, me, offline, friends = [], onOpenFri
               </p>
             )}
           </div>
+        )}
+
+        {!sharedWithMe && event && shares.length > 0 && (
+          <Answers eventId={event.id} shares={shares} offline={offline} onChange={setShares} />
         )}
 
         <ul className="errors" role="alert">
