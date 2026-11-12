@@ -51,14 +51,18 @@ export default function DayView({ cursor, events, today, holidays, onSelect, onA
             </div>
             <button
               type="button"
-              className="day-card"
-              style={{ background: color.bg, color: color.text, borderLeftColor: color.edge }}
+              className={event.invite ? 'day-card invite' : 'day-card'}
+              style={{ backgroundColor: color.bg, color: color.text, borderLeftColor: color.edge }}
               onClick={() => onEdit(event)}
             >
               <b>{event.title}</b>
               {timeLabel(event, cursor).note && <span>{timeLabel(event, cursor).note}</span>}
               {event.location && <span>{event.location}</span>}
-              {event.mine === false && <span>Shared by {event.owner_username}</span>}
+              {event.invite ? (
+                <span className="invite-tag">Invite from {event.owner_username} · tap to answer</span>
+              ) : (
+                event.mine === false && <span>Shared by {event.owner_username}</span>
+              )}
             </button>
           </div>
         )

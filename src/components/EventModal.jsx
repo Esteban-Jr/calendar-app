@@ -1,7 +1,60 @@
 import { useEffect, useState } from 'react'
-import { createEvent, deleteEvent, errorMessages, leaveEvent, updateEvent } from '../api.js'
+import {
+  acceptInvite, createEvent, declineInvite, deleteEvent, errorMessages, inviteAgain, leaveEvent, updateEvent,
+} from '../api.js'
 import { CAKE, COLOR_KEYS } from '../colors.js'
 import { toInputValue } from '../dates.js'
+
+// How each person answered an invite to my event.
+const ANSWER = {
+  accepted: { icon: '✓', text: 'Going' },
+  waiting: { icon: '⏳', text: 'Waiting for an answer' },
+  declined: { icon: '✗', text: 'Declined' },
+}
+
+// The owner's list of who's going: each person's answer, and "Invite again"
+// for anyone who declined.
+function Answers({ eventId, shares, offline, onChange }) {
+  const [busy, setBusy] = useState('')
+  const [message, setMessage] = useState('')
+
+  async function again(username) {
+    setBusy(username)
+    setMessage('')
+    try {
+      const updated = await inviteAgain(eventId, username)
+      onChange(updated.shares)
+      setMessage(`Sent ${username} a new invite.`)
+    } catch (err) {
+      setMessage(errorMessages(err).join(' '))
+    } finally {
+      setBusy('')
+    }
+  }
+
+  return (
+    <div className="field">
+      <span>Answers</span>
+      <ul className="answers">
+        {shares.map(({ username, status }) => (
+          <li key={username} className={`answer ${status}`}>
+            <b>{username}</b>
+            <span className="answer-status">
+              <span aria-hidden="true">{ANSWER[status].icon} </span>
+              {ANSWER[status].text}
+            </span>
+            {status === 'declined' && !offline && (
+              <button type="button" className="btn-text" disabled={busy === username} onClick={() => again(username)}>
+                Invite again
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
+      {message && <p className="answers-note" role="status">{message}</p>}
+    </div>
+  )
+}
 
 const REMINDERS = [
   ['', 'No reminder'],
@@ -19,6 +72,8 @@ const REMINDERS = [
 // it can be shared with; `onOpenFriends` opens the Friends window.
 export default function EventModal({ event, me, offline, friends = [], onOpenFriends, defaults, onClose, onSaved }) {
   const sharedWithMe = Boolean(event && me && event.owner_username !== me.username)
+  // An invite I haven't answered yet (it's shown faded in the calendar).
+  const invite = Boolean(event?.invite)
   const readOnly = sharedWithMe || offline
 
   const [title, setTitle] = useState(event?.title ?? '')
@@ -29,6 +84,8 @@ export default function EventModal({ event, me, offline, friends = [], onOpenFri
   const [reminder, setReminder] = useState(event?.reminder == null ? '' : String(event.reminder))
   const [color, setColor] = useState(event?.color ?? defaults.color)
   const [sharedWith, setSharedWith] = useState(event?.shared_with ?? [])
+  // Everyone's answer so far (my own events only): [{ username, status }]
+  const [shares, setShares] = useState(event?.shares ?? [])
   const [errors, setErrors] = useState([])
   const [saving, setSaving] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
@@ -96,6 +153,18 @@ export default function EventModal({ event, me, offline, friends = [], onOpenFri
     }
   }
 
+  // An invite: accept puts it in my calendar, decline keeps it out. The owner is told either way.
+  async function answerInvite(accept) {
+    setSaving(true)
+    try {
+      await (accept ? acceptInvite(event.id) : declineInvite(event.id))
+      onSaved()
+    } catch (err) {
+      setErrors(errorMessages(err))
+      setSaving(false)
+    }
+  }
+
   async function handleDelete() {
     setSaving(true)
     try {
@@ -108,14 +177,19 @@ export default function EventModal({ event, me, offline, friends = [], onOpenFri
     }
   }
 
-  const heading = readOnly ? 'Event' : event ? 'Edit event' : 'New event'
+  const heading = invite ? 'Invite' : readOnly ? 'Event' : event ? 'Edit event' : 'New event'
 
   return (
     <div className="backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <form className="modal" role="dialog" aria-modal="true" aria-label={heading} onSubmit={handleSave}>
         <h2>{heading}</h2>
 
-        {sharedWithMe && (
+        {invite && (
+          <p className="note">
+            <b>{event.owner_username}</b> invited you. Accept to add it to your calendar.
+          </p>
+        )}
+        {sharedWithMe && !invite && (
           <p className="note">
             Shared with you by <b>{event.owner_username}</b>. You can look at it, but only they can change it.
           </p>
@@ -216,6 +290,10 @@ export default function EventModal({ event, me, offline, friends = [], onOpenFri
           </div>
         )}
 
+        {!sharedWithMe && event && shares.length > 0 && (
+          <Answers eventId={event.id} shares={shares} offline={offline} onChange={setShares} />
+        )}
+
         <ul className="errors" role="alert">
           {errors.map((message) => <li key={message}>{message}</li>)}
         </ul>
@@ -233,20 +311,33 @@ export default function EventModal({ event, me, offline, friends = [], onOpenFri
               <button type="button" className="btn-text" onClick={() => setConfirmingDelete(false)}>No</button>
             </span>
           )}
-          {sharedWithMe && !offline && !confirmingLeave && (
+          {invite && !offline && (
+            <>
+              <button type="button" className="btn-text" onClick={onClose}>Later</button>
+              <span className="spacer" />
+              <button type="button" className="btn-text" onClick={() => answerInvite(false)} disabled={saving}>
+                Decline
+              </button>
+              <button type="button" className="btn small" onClick={() => answerInvite(true)} disabled={saving}>
+                Accept
+              </button>
+            </>
+          )}
+          {invite && offline && <span className="muted">You can answer once you're back online.</span>}
+          {sharedWithMe && !invite && !offline && !confirmingLeave && (
             <button type="button" className="btn-text danger" onClick={() => setConfirmingLeave(true)} disabled={saving}>
               Remove from my calendar
             </button>
           )}
-          {sharedWithMe && !offline && confirmingLeave && (
+          {sharedWithMe && !invite && !offline && confirmingLeave && (
             <span className="confirm">
               Remove it? {event.owner_username} will be told.
               <button type="button" className="btn-text danger" onClick={handleLeave} disabled={saving}>Yes, remove</button>
               <button type="button" className="btn-text" onClick={() => setConfirmingLeave(false)}>No</button>
             </span>
           )}
-          <span className="spacer" />
-          {!confirmingLeave && (
+          {!(invite && !offline) && <span className="spacer" />}
+          {!confirmingLeave && !(invite && !offline) && (
             <button type="button" className="btn-text" onClick={onClose}>{readOnly ? 'Close' : 'Cancel'}</button>
           )}
           {!readOnly && <button type="submit" className="btn small" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>}

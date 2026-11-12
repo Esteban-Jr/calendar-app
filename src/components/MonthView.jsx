@@ -59,9 +59,9 @@ export default function MonthView({ cursor, events, today, holidays, onSelect, o
                   <button
                     key={event.id}
                     type="button"
-                    className="chip"
-                    title={`${event.title}: ${timeLabel(event, day).range}`}
-                    style={{ background: color.bg, color: color.text, borderLeftColor: color.edge }}
+                    className={event.invite ? 'chip invite' : 'chip'}
+                    title={`${event.invite ? 'Invite: ' : ''}${event.title}: ${timeLabel(event, day).range}`}
+                    style={{ backgroundColor: color.bg, color: color.text, borderLeftColor: color.edge }}
                     onClick={(e) => {
                       e.stopPropagation()
                       onEdit(event)

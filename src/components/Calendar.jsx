@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
-import { getFriends, getMe, getNotifications, listEvents, listHolidays, markNotificationsRead } from '../api.js'
+import { getFriends, getMe, getNotifications, listEvents, listHolidays, listInvites, markNotificationsRead } from '../api.js'
 import { pickLeastUsed } from '../colors.js'
 import { isOffline, subscribeOffline } from '../offline.js'
 import { enablePush } from '../push.js'
@@ -153,6 +153,15 @@ export default function Calendar({ onLogout }) {
     loadNotes()
   }, [reloadKey])
 
+  // Invites: events shared with me that I haven't answered. They show faded
+  // in the calendar (so clashes are easy to spot) until I accept or decline.
+  const [invites, setInvites] = useState([])
+  const loadInvites = () => listInvites().then(setInvites).catch(() => {}) // offline: keep what we had
+
+  useEffect(() => {
+    loadInvites()
+  }, [reloadKey])
+
   // ---------- Keeping the screen up to date ----------
   // Other people can send friend requests, share events or notify you while
   // the app is open, so everything is loaded again: every so often while the
@@ -162,7 +171,7 @@ export default function Calendar({ onLogout }) {
   const lastRefresh = useRef(0)
   async function refreshAll() {
     lastRefresh.current = Date.now()
-    const [eventsChanged] = await Promise.all([loadEvents(), loadFriends(), loadNotes()])
+    const [eventsChanged] = await Promise.all([loadEvents(), loadFriends(), loadNotes(), loadInvites()])
     if (eventsChanged) setRemindersKey((n) => n + 1) // a new event may need a reminder soon
   }
 
@@ -208,11 +217,16 @@ export default function Calendar({ onLogout }) {
       .catch(() => {})
   }
 
-  // Mark events that belong to somebody else (shared with me).
-  const shownEvents = useMemo(
-    () => events.map((event) => ({ ...event, mine: !me || event.owner_username === me.username })),
-    [events, me],
-  )
+  // Mark events that belong to somebody else (shared with me), and add the
+  // invites I haven't answered (marked `invite`).
+  const shownEvents = useMemo(() => {
+    const list = events.map((event) => ({ ...event, mine: !me || event.owner_username === me.username }))
+    const ids = new Set(list.map((event) => event.id))
+    for (const invite of invites) {
+      if (!ids.has(invite.id)) list.push({ ...invite, mine: false, invite: true })
+    }
+    return list
+  }, [events, invites, me])
 
   const { banners, dismiss } = useReminders({ me, refreshKey: `${reloadKey}-${remindersKey}` })
 
@@ -278,7 +292,7 @@ export default function Calendar({ onLogout }) {
     if (offline) return
     const start = new Date(day.getFullYear(), day.getMonth(), day.getDate(), hour, 0)
     const end = new Date(start.getTime() + 60 * 60 * 1000)
-    setModal({ defaults: { start, end, color: pickLeastUsed(shownEvents) } })
+    setModal({ defaults: { start, end, color: pickLeastUsed(shownEvents.filter((event) => !event.invite)) } })
   }
 
   function openDay(day) {
@@ -411,7 +425,14 @@ export default function Calendar({ onLogout }) {
       )}
 
       {showNotes && (
-        <NotificationsModal data={noteData} onOpened={markNotesRead} onClose={() => setShowNotes(false)} />
+        <NotificationsModal
+          data={noteData}
+          offline={offline}
+          onOpened={markNotesRead}
+          // Accepting puts the event in the calendar: load everything again.
+          onAnswered={() => setReloadKey((n) => n + 1)}
+          onClose={() => setShowNotes(false)}
+        />
       )}
 
       {showFriends && (
