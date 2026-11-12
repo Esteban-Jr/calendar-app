@@ -7,6 +7,7 @@ import {
   addDays, addMonths, formatLongDate, formatMonthYear, formatWeekRange, monthGrid, startOfDay,
   weekDays,
 } from '../dates.js'
+import AccountModal, { AccountButton } from './AccountModal.jsx'
 import Agenda from './Agenda.jsx'
 import Footer from './Footer.jsx'
 import FriendsButton from './FriendsButton.jsx'
@@ -80,7 +81,8 @@ export default function Calendar({ onLogout }) {
   const [holidayYears, setHolidayYears] = useState({}) // year -> list from the API
   const [holidayError, setHolidayError] = useState(false)
   const requestedYears = useRef(new Set())
-  const [me, setMe] = useState(null) // { id, username } of the person logged in
+  const [me, setMe] = useState(null) // { id, username, email, next_username_change } of the person logged in
+  const [showAccount, setShowAccount] = useState(false)
   // Offline the calendar shows the saved copy and can't be changed.
   const offline = useSyncExternalStore(subscribeOffline, isOffline)
   const wasOffline = useRef(offline)
@@ -317,7 +319,7 @@ export default function Calendar({ onLogout }) {
             <button type="button" className={showHolidays ? 'pill holiday-toggle on' : 'pill holiday-toggle'} aria-pressed={showHolidays} onClick={toggleHolidays}>
               Holidays
             </button>
-            <button type="button" className="btn-text" onClick={onLogout}>Sign out</button>
+            <AccountButton me={me} onClick={() => setShowAccount(true)} />
           </div>
         </header>
 
@@ -421,6 +423,19 @@ export default function Calendar({ onLogout }) {
             setModal(null)
             setReloadKey((n) => n + 1)
           }}
+        />
+      )}
+
+      {showAccount && (
+        <AccountModal
+          me={me}
+          offline={offline}
+          onChanged={(updated) => {
+            setMe(updated) // "mine" marks and reminders use my username
+            setReloadKey((n) => n + 1)
+          }}
+          onLogout={onLogout}
+          onClose={() => setShowAccount(false)}
         />
       )}
 
