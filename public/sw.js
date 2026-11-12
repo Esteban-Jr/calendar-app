@@ -2,7 +2,8 @@
 // (1) keeps a copy of the app's own files, so the app opens without internet
 //     (your events come from a separate saved copy, see src/offline.js);
 // (2) lets phones show notifications, and tapping one brings the app forward;
-// (3) shows reminders pushed by the server while the app is closed.
+// (3) shows reminders pushed by the server while the app is closed, and tells
+//     the app to refresh if it's open.
 // API calls (/api/...) are never cached here: they always go to the server.
 
 // Change the version when files keep their name but change (like the icons),
@@ -110,13 +111,19 @@ self.addEventListener('push', (event) => {
     message = { body: event.data?.text() }
   }
   event.waitUntil(
-    self.registration.showNotification(message.title || 'My Calendar', {
-      body: message.body || '',
-      tag: message.tag,
-      icon: '/icon-192.png',
-      badge: '/icon-192.png',
-      data: { url: message.url || '/' },
-    }),
+    Promise.all([
+      self.registration.showNotification(message.title || 'My Calendar', {
+        body: message.body || '',
+        tag: message.tag,
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
+        data: { url: message.url || '/' },
+      }),
+      // If the app is open, tell it to load the news straight away.
+      self.clients.matchAll({ type: 'window' }).then((windows) => {
+        for (const client of windows) client.postMessage({ type: 'refresh' })
+      }),
+    ]),
   )
 })
 
