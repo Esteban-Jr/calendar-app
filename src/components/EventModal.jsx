@@ -15,8 +15,9 @@ const REMINDERS = [
 // `event` is an existing event to edit, or null for a new one.
 // `defaults` gives the start/end (Dates) and colour for a new event.
 // `me` is the person logged in; an event someone else shared can only be viewed.
-// Offline, every event can only be viewed.
-export default function EventModal({ event, me, offline, defaults, onClose, onSaved }) {
+// Offline, every event can only be viewed. `friends` (usernames) are the people
+// it can be shared with; `onOpenFriends` opens the Friends window.
+export default function EventModal({ event, me, offline, friends = [], onOpenFriends, defaults, onClose, onSaved }) {
   const sharedWithMe = Boolean(event && me && event.owner_username !== me.username)
   const readOnly = sharedWithMe || offline
 
@@ -28,7 +29,6 @@ export default function EventModal({ event, me, offline, defaults, onClose, onSa
   const [reminder, setReminder] = useState(event?.reminder == null ? '' : String(event.reminder))
   const [color, setColor] = useState(event?.color ?? defaults.color)
   const [sharedWith, setSharedWith] = useState(event?.shared_with ?? [])
-  const [shareInput, setShareInput] = useState('')
   const [errors, setErrors] = useState([])
   const [saving, setSaving] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
@@ -45,17 +45,12 @@ export default function EventModal({ event, me, offline, defaults, onClose, onSa
     ? REMINDERS
     : [...REMINDERS, [reminder, `${reminder} minutes before`]]
 
-  // Add the typed username to the list (the API checks that the person exists).
-  function peopleWithTyped() {
-    const name = shareInput.trim()
-    if (!name || sharedWith.includes(name) || name === me?.username) return sharedWith
-    return [...sharedWith, name]
+  function toggleShare(name) {
+    setSharedWith(sharedWith.includes(name) ? sharedWith.filter((n) => n !== name) : [...sharedWith, name])
   }
 
-  function addPerson() {
-    setSharedWith(peopleWithTyped())
-    setShareInput('')
-  }
+  // Friends first, then anyone it's already shared with who isn't on the list.
+  const shareChoices = [...friends, ...sharedWith.filter((name) => !friends.includes(name))]
 
   async function handleSave(e) {
     e.preventDefault()
@@ -75,7 +70,7 @@ export default function EventModal({ event, me, offline, defaults, onClose, onSa
       end: endDate.toISOString(),
       reminder: reminder === '' ? null : Number(reminder),
       color,
-      shared_with: peopleWithTyped(),
+      shared_with: sharedWith,
     }
     try {
       if (event) await updateEvent(event.id, data)
@@ -182,41 +177,28 @@ export default function EventModal({ event, me, offline, defaults, onClose, onSa
           )
         ) : (
           <div className="field">
-            <span>Share with (they can view, not edit)</span>
-            {sharedWith.length > 0 && (
-              <div className="people">
-                {sharedWith.map((name) => (
-                  <span key={name} className="person">
+            <span>Share with friends (they can view, not edit)</span>
+            {shareChoices.length > 0 ? (
+              <div className="people" role="group" aria-label="Share with">
+                {shareChoices.map((name) => (
+                  <button
+                    key={name}
+                    type="button"
+                    className={sharedWith.includes(name) ? 'person pick on' : 'person pick'}
+                    aria-pressed={sharedWith.includes(name)}
+                    onClick={() => toggleShare(name)}
+                  >
+                    {sharedWith.includes(name) && <span aria-hidden="true">✓ </span>}
                     {name}
-                    <button
-                      type="button"
-                      aria-label={`Stop sharing with ${name}`}
-                      onClick={() => setSharedWith(sharedWith.filter((n) => n !== name))}
-                    >
-                      ×
-                    </button>
-                  </span>
+                  </button>
                 ))}
               </div>
+            ) : (
+              <p className="muted share-empty">
+                You can share events with friends.{' '}
+                <button type="button" className="link" onClick={onOpenFriends}>Add friends</button>
+              </p>
             )}
-            <div className="share-add">
-              <input
-                type="text"
-                value={shareInput}
-                onChange={(e) => setShareInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    addPerson()
-                  }
-                }}
-                placeholder="their username"
-                autoCapitalize="none"
-                autoComplete="off"
-                aria-label="Username to share with"
-              />
-              <button type="button" className="pill" onClick={addPerson}>Add</button>
-            </div>
           </div>
         )}
 

@@ -1244,6 +1244,124 @@ fieldset.plain:disabled .swatch {
   flex: 1;
 }
 
+/* Friends to tick in the event window. */
+.person.pick {
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: #f5f9ff;
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+}
+
+.person.pick.on {
+  color: #fff;
+  background: var(--blue);
+  border-color: var(--blue);
+}
+
+.muted {
+  margin: 0;
+  font-size: 0.86rem;
+  color: var(--muted);
+}
+
+.share-empty .link {
+  padding: 0;
+}
+
+/* ---------- Friends ---------- */
+
+.friends-btn {
+  position: relative;
+}
+
+/* How many friend requests are waiting. */
+.friends-btn .count {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 18px;
+  color: #fff;
+  background: #ef5b7b;
+  border-radius: 999px;
+}
+
+/* Phones: a round button in the bottom-left corner, opposite the + button,
+   instead of a fifth thing squeezed into the top bar. */
+@media (max-width: 760px) {
+  .top-actions .pill.friends-btn {
+    position: fixed;
+    left: 18px;
+    bottom: calc(18px + env(safe-area-inset-bottom));
+    z-index: 5;
+    width: 58px;
+    height: 58px;
+    color: var(--blue);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: 0 10px 26px rgba(20, 33, 61, 0.16);
+  }
+
+  .friends-btn svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .friends-btn .count {
+    top: -2px;
+    right: -2px;
+  }
+}
+
+.modal.friends .share-add {
+  margin-bottom: 10px;
+}
+
+.friends-notice {
+  margin: 0 0 8px;
+  font-size: 0.86rem;
+  color: #1f7a4d;
+}
+
+.friend-group {
+  margin-bottom: 16px;
+}
+
+.friend-group h3 {
+  margin: 0 0 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.friend-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 46px;
+  padding: 4px 0;
+  border-bottom: 1px solid #edf2fb;
+}
+
+.friend-row > span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.friend-row.confirm > span {
+  font-size: 0.86rem;
+}
+
 .share-icon,
 .shared-icon {
   flex: none;
@@ -1258,7 +1376,9 @@ fieldset.plain:disabled .swatch {
   position: relative;
 }
 
-.pill.bell {
+/* Round icon buttons in the top bar. */
+.pill.bell,
+.pill.friends-btn {
   width: 34px;
   height: 34px;
   display: grid;

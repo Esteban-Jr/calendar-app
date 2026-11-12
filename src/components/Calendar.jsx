@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
-import { getMe, listEvents, listHolidays } from '../api.js'
+import { getFriends, getMe, listEvents, listHolidays } from '../api.js'
 import { pickLeastUsed } from '../colors.js'
 import { isOffline, subscribeOffline } from '../offline.js'
 import {
@@ -8,6 +8,8 @@ import {
 } from '../dates.js'
 import Agenda from './Agenda.jsx'
 import Footer from './Footer.jsx'
+import FriendsButton from './FriendsButton.jsx'
+import FriendsModal from './FriendsModal.jsx'
 import DayView from './DayView.jsx'
 import EventModal from './EventModal.jsx'
 import MonthView from './MonthView.jsx'
@@ -117,6 +119,15 @@ export default function Calendar({ onLogout }) {
     getMe().then(setMe).catch(() => {}) // a 401 is handled globally; anything else just means no "shared" marks
   }, [])
 
+  // Friends and friend requests ({ friends, incoming, outgoing }).
+  const [friendData, setFriendData] = useState(null)
+  const [showFriends, setShowFriends] = useState(false)
+  const loadFriends = () => getFriends().then(setFriendData).catch(() => {})
+
+  useEffect(() => {
+    loadFriends()
+  }, [reloadKey])
+
   // Mark events that belong to somebody else (shared with me).
   const shownEvents = useMemo(
     () => events.map((event) => ({ ...event, mine: !me || event.owner_username === me.username })),
@@ -205,6 +216,7 @@ export default function Calendar({ onLogout }) {
       <header className="topbar">
         <div className="brand"><LogoMark /> <span className="brand-name">My Calendar</span></div>
         <div className="top-actions">
+          <FriendsButton waiting={friendData?.incoming.length ?? 0} onClick={() => setShowFriends(true)} />
           <ReminderBell />
           <button type="button" className={showHolidays ? 'pill holiday-toggle on' : 'pill holiday-toggle'} aria-pressed={showHolidays} onClick={toggleHolidays}>
             Holidays
@@ -301,12 +313,27 @@ export default function Calendar({ onLogout }) {
           event={modal.event ?? null}
           me={me}
           offline={offline}
+          friends={(friendData?.friends ?? []).map((friend) => friend.username)}
+          onOpenFriends={() => {
+            setModal(null)
+            setShowFriends(true)
+          }}
           defaults={modal.defaults}
           onClose={() => setModal(null)}
           onSaved={() => {
             setModal(null)
             setReloadKey((n) => n + 1)
           }}
+        />
+      )}
+
+      {showFriends && (
+        <FriendsModal
+          data={friendData}
+          offline={offline}
+          // Reloads friends and events (removing a friend can remove shared events).
+          onChanged={() => setReloadKey((n) => n + 1)}
+          onClose={() => setShowFriends(false)}
         />
       )}
     </div>
