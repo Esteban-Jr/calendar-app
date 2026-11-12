@@ -29,6 +29,14 @@ export async function enablePush() {
   return true
 }
 
+// True when the server can push to this device. The server then sends the
+// phone notifications for reminders, so the app must not send its own too.
+export async function pushIsOn() {
+  if (!pushSupported() || Notification.permission !== 'granted') return false
+  const registration = await navigator.serviceWorker.getRegistration()
+  return Boolean(await registration?.pushManager.getSubscription())
+}
+
 // Signing out: stop pushes to this device. Call it while still signed in,
 // since telling the API needs the login token.
 export async function disablePush() {
