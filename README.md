@@ -40,8 +40,10 @@ VITE_API_TARGET=https://your-server npm run dev
 
 ```bash
 npm run build      # the finished site is in dist/
-./deploy.sh        # build, then copy dist/ to the server
+./deploy.sh        # build, then copy dist/ to the server (by hand)
 ```
+
+**Automatic:** GitHub Actions (`.github/workflows/deploy.yml`) lints and builds every pull request, and after a merge to `main` builds the app and uploads it to the server. The SSH key it uses (the `DEPLOY_SSH_KEY` secret) is locked on the server to uploading into `/srv/calendar-web` and nothing else.
 
 In production the app and the API are served from the same address by Nginx (the app at `/`, the API under `/api/`), which is why the app uses relative URLs and never needs CORS.
 
