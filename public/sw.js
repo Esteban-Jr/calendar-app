@@ -1,7 +1,8 @@
 // The service worker. It:
 // (1) keeps a copy of the app's own files, so the app opens without internet
 //     (your events come from a separate saved copy, see src/offline.js);
-// (2) lets phones show notifications, and tapping one brings the app forward.
+// (2) lets phones show notifications, and tapping one brings the app forward;
+// (3) shows reminders pushed by the server while the app is closed.
 // API calls (/api/...) are never cached here: they always go to the server.
 
 const CACHE = 'calendar-app-v1'
@@ -94,6 +95,26 @@ self.addEventListener('fetch', (event) => {
           return response
         }),
     ),
+  )
+})
+
+// A reminder pushed by the server: { title, body, tag, url }. The tag matches
+// the one the app uses itself, so the same reminder never shows twice.
+self.addEventListener('push', (event) => {
+  let message = {}
+  try {
+    message = event.data ? event.data.json() : {}
+  } catch {
+    message = { body: event.data?.text() }
+  }
+  event.waitUntil(
+    self.registration.showNotification(message.title || 'My Calendar', {
+      body: message.body || '',
+      tag: message.tag,
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      data: { url: message.url || '/' },
+    }),
   )
 })
 

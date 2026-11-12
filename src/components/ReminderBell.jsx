@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { enablePush } from '../push.js'
 import { notificationsSupported, showSystemNotification } from '../reminders.js'
 
 function Bell({ slash }) {
@@ -24,12 +25,16 @@ export default function ReminderBell() {
     } else if (permission === 'denied') {
       setHint('Notifications are blocked for this site. Allow them in your browser settings to get system reminders. Reminders still appear inside the app.')
     } else if (permission === 'granted') {
-      setHint('System notifications are on.')
+      const push = await enablePush().catch(() => false)
+      setHint(push ? 'Notifications are on, also when the app is closed.' : 'System notifications are on (while the app is open).')
     } else {
       const result = await Notification.requestPermission()
       setPermission(result)
       if (result === 'granted') {
-        setHint('Notifications are on. Reminders will pop up while the app is open.')
+        const push = await enablePush().catch(() => false)
+        setHint(push
+          ? 'Notifications are on. Reminders will pop up even when the app is closed.'
+          : 'Notifications are on. Reminders will pop up while the app is open.')
         showSystemNotification('Reminders are on', 'You will be notified before your events.', 'reminders-on')
       } else {
         setHint('No problem. Reminders will still appear inside the app.')
