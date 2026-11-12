@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 
 export const PULL_THRESHOLD = 64 // how far (after slowing down) you pull before letting go refreshes
-const MAX_PULL = 100
+const MAX_PULL = 140 // the furthest the page can be pulled down
+const HOLD_AT = 80 // where the page waits while it refreshes
+const RESISTANCE = 0.6 // the page moves a bit less than the finger
 const DEADZONE = 8 // ignore tiny finger wobbles before deciding it's a pull
 const MIN_SPIN = 600 // keep the spinner up long enough to be seen
 
@@ -71,7 +73,7 @@ export default function usePullToRefresh(onRefresh) {
         setDragging(true)
       }
       event.preventDefault() // no page bounce while pulling
-      distance = Math.min(MAX_PULL, (dy - DEADZONE) * 0.5)
+      distance = Math.min(MAX_PULL, (dy - DEADZONE) * RESISTANCE)
       setPull(distance)
     }
 
@@ -88,7 +90,7 @@ export default function usePullToRefresh(onRefresh) {
       }
       busy.current = true
       setRefreshing(true)
-      setPull(PULL_THRESHOLD)
+      setPull(HOLD_AT)
       const wait = new Promise((resolve) => setTimeout(resolve, MIN_SPIN))
       Promise.all([Promise.resolve(latest.current()).catch(() => {}), wait]).finally(() => {
         busy.current = false
