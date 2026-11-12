@@ -6,6 +6,7 @@ import {
   weekDays,
 } from '../dates.js'
 import Agenda from './Agenda.jsx'
+import Footer from './Footer.jsx'
 import DayView from './DayView.jsx'
 import EventModal from './EventModal.jsx'
 import MonthView from './MonthView.jsx'
@@ -267,6 +268,8 @@ export default function Calendar({ onLogout }) {
           />
         )}
       </main>
+
+      <Footer />
 
       <button type="button" className="fab" aria-label="Add event" onClick={() => openNew(cursor)}>+</button>
 

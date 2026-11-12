@@ -1,3 +1,5 @@
+import Footer from './Footer.jsx'
+
 // The card every sign-in style screen sits in: logo, title, form, footer line.
 function CalendarIcon() {
   return (
@@ -28,6 +30,7 @@ export default function AuthShell({ title, subtitle, onSubmit, footer, children 
         {children}
         {footer && <p className="auth-footer">{footer}</p>}
       </Card>
+      <Footer />
     </main>
   )
 }
