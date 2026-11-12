@@ -132,6 +132,18 @@ export const sendFriendRequest = (username) => request('/api/friends/', { method
 export const acceptFriend = (id) => request(`/api/friends/${id}/accept/`, { method: 'POST' })
 export const removeFriend = (id) => request(`/api/friends/${id}/`, { method: 'DELETE' })
 
+// Notifications: { unread, notifications: [{ id, message, read, created, ... }] }.
+export const getNotifications = () =>
+  withSavedCopy(
+    () => request('/api/notifications/'),
+    (data) => saveValue('notifications', data),
+    () => savedValue('notifications'),
+  )
+export const markNotificationsRead = () => request('/api/notifications/read/', { method: 'POST' })
+
+// Take an event someone shared with me off my calendar (the owner is told).
+export const leaveEvent = (id) => request(`/api/events/${id}/leave/`, { method: 'POST' })
+
 // Push notifications (reminders while the app is closed).
 export const getPushKey = () => request('/api/push/key/')
 export const savePushSubscription = (subscription) =>

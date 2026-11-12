@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { createEvent, deleteEvent, errorMessages, updateEvent } from '../api.js'
+import { createEvent, deleteEvent, errorMessages, leaveEvent, updateEvent } from '../api.js'
 import { CAKE, COLOR_KEYS } from '../colors.js'
 import { toInputValue } from '../dates.js'
 
@@ -32,6 +32,7 @@ export default function EventModal({ event, me, offline, friends = [], onOpenFri
   const [errors, setErrors] = useState([])
   const [saving, setSaving] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [confirmingLeave, setConfirmingLeave] = useState(false)
 
   useEffect(() => {
     function onKey(e) {
@@ -79,6 +80,19 @@ export default function EventModal({ event, me, offline, friends = [], onOpenFri
     } catch (err) {
       setErrors(errorMessages(err))
       setSaving(false)
+    }
+  }
+
+  // An event someone shared with me: take it off my calendar (they're told).
+  async function handleLeave() {
+    setSaving(true)
+    try {
+      await leaveEvent(event.id)
+      onSaved()
+    } catch (err) {
+      setErrors(errorMessages(err))
+      setSaving(false)
+      setConfirmingLeave(false)
     }
   }
 
@@ -219,8 +233,22 @@ export default function EventModal({ event, me, offline, friends = [], onOpenFri
               <button type="button" className="btn-text" onClick={() => setConfirmingDelete(false)}>No</button>
             </span>
           )}
+          {sharedWithMe && !offline && !confirmingLeave && (
+            <button type="button" className="btn-text danger" onClick={() => setConfirmingLeave(true)} disabled={saving}>
+              Remove from my calendar
+            </button>
+          )}
+          {sharedWithMe && !offline && confirmingLeave && (
+            <span className="confirm">
+              Remove it? {event.owner_username} will be told.
+              <button type="button" className="btn-text danger" onClick={handleLeave} disabled={saving}>Yes, remove</button>
+              <button type="button" className="btn-text" onClick={() => setConfirmingLeave(false)}>No</button>
+            </span>
+          )}
           <span className="spacer" />
-          <button type="button" className="btn-text" onClick={onClose}>{readOnly ? 'Close' : 'Cancel'}</button>
+          {!confirmingLeave && (
+            <button type="button" className="btn-text" onClick={onClose}>{readOnly ? 'Close' : 'Cancel'}</button>
+          )}
           {!readOnly && <button type="submit" className="btn small" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>}
         </div>
       </form>
