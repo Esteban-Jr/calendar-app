@@ -3,10 +3,7 @@
 .app {
   min-height: 100vh;
   min-height: 100dvh;
-  background:
-    radial-gradient(55% 40% at 8% 0%, #ffe3ec 0%, transparent 60%),
-    radial-gradient(50% 40% at 100% 0%, #dccfff 0%, transparent 60%),
-    linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
+  background: var(--app-bg);
   background-attachment: fixed;
   /* The page itself never scrolls sideways; wide parts (like the week grid)
      scroll inside their own box instead. `clip` (not `hidden`) so nothing
@@ -67,7 +64,7 @@
   display: grid;
   place-items: center;
   border-radius: 11px;
-  background: linear-gradient(135deg, #7db4ff 0%, var(--blue) 100%);
+  background: linear-gradient(135deg, #7db4ff 0%, #2f6fed 100%); /* the logo: the same blue in every theme */
 }
 
 .shell {
@@ -226,7 +223,7 @@
 }
 
 .cell:hover {
-  background: #f6faff;
+  background: var(--tint-hover);
 }
 
 .cell.outside {
@@ -238,7 +235,7 @@
 }
 
 .cell.selected {
-  background: #eaf3ff;
+  background: var(--tint-selected);
 }
 
 .cell-top {
@@ -468,7 +465,7 @@ select:focus,
 textarea:focus {
   background: #fff;
   border-color: var(--blue);
-  box-shadow: 0 0 0 4px rgba(47, 111, 237, 0.15);
+  box-shadow: 0 0 0 4px rgb(var(--accent-rgb) / 0.15);
 }
 
 .swatches {
@@ -754,7 +751,7 @@ button.cell-num:hover {
 }
 
 .week-col.today {
-  background-color: #f3f8ff;
+  background-color: var(--tint-today);
 }
 
 .block {
@@ -913,7 +910,7 @@ button.cell-num:hover {
   grid-template-columns: repeat(7, 1fr);
   gap: 4px;
   padding: 8px;
-  background: #f5f9ff;
+  background: var(--tint-soft);
   border-radius: 18px;
 }
 
@@ -943,7 +940,7 @@ button.cell-num:hover {
 }
 
 .strip-day.on {
-  background: #dbe9ff;
+  background: var(--tint-strong);
 }
 
 .strip-day.today b {
@@ -1047,10 +1044,10 @@ button.cell-num:hover {
     font-size: 2rem;
     line-height: 1;
     color: #fff;
-    background: linear-gradient(180deg, #4a85f5 0%, var(--blue) 100%);
+    background: linear-gradient(180deg, var(--blue-light) 0%, var(--blue) 100%);
     border: 0;
     border-radius: 50%;
-    box-shadow: 0 10px 26px rgba(47, 111, 237, 0.4);
+    box-shadow: 0 10px 26px rgb(var(--accent-rgb) / 0.4);
     cursor: pointer;
   }
 
@@ -1712,7 +1709,7 @@ fieldset.plain:disabled .swatch {
   font-size: 0.9rem;
   font-weight: 600;
   color: #fff;
-  background: linear-gradient(135deg, #7db4ff, var(--blue));
+  background: linear-gradient(135deg, var(--blue-soft), var(--blue));
   border-color: transparent;
 }
 

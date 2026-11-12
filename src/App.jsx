@@ -4,6 +4,7 @@ import Calendar from './components/Calendar.jsx'
 import AuthFlow from './components/AuthFlow.jsx'
 import { clearToken, getToken, saveToken } from './auth.js'
 import { disablePush } from './push.js'
+import { resetTheme } from './theme.js'
 
 export default function App() {
   const [token, setToken] = useState(getToken)
@@ -16,6 +17,7 @@ export default function App() {
   async function handleLogout() {
     await disablePush().catch(() => {}) // before the token is gone: telling the API needs it
     clearToken()
+    resetTheme()
     setToken(null)
   }
 

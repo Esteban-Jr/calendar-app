@@ -4,7 +4,12 @@ import '@fontsource/poppins/400.css'
 import '@fontsource/poppins/500.css'
 import '@fontsource/poppins/600.css'
 import './index.css'
+import './themes.css'
 import App from './App.jsx'
+import { applyTheme, savedTheme } from './theme.js'
+
+// The theme this device last used, before anything is drawn (no flash of the default look).
+applyTheme(savedTheme())
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

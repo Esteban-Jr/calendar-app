@@ -7,9 +7,25 @@
   --border: #d3e2f6;
   --text: #14213d;
   --muted: #5d6c86;
-  --blue: #2f6fed;
+  --blue: #2f6fed; /* the accent colour: buttons, today, the chosen view */
   --blue-dark: #2058c9;
+  --blue-light: #4a85f5; /* top of the button gradient */
+  --blue-light-hover: #3f7cf0;
+  --blue-soft: #7db4ff;
+  --accent-rgb: 47 111 237; /* the accent as numbers, for see-through glows */
+  /* Light tints of the accent: hovering, today, the selected day */
+  --tint-soft: #f5f9ff;
+  --tint-hover: #f6faff;
+  --tint-today: #f3f8ff;
+  --tint-selected: #eaf3ff;
+  --tint-strong: #dbe9ff;
   --danger: #c0334d;
+
+  /* The page behind the calendar. A theme (src/themes.css) replaces it. */
+  --app-bg:
+    radial-gradient(55% 40% at 8% 0%, #ffe3ec 0%, transparent 60%),
+    radial-gradient(50% 40% at 100% 0%, #dccfff 0%, transparent 60%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
 
   --radius: 22px;
   --shadow: 0 18px 50px rgba(47, 111, 237, 0.14), 0 2px 8px rgba(20, 33, 61, 0.05);
@@ -84,7 +100,7 @@ h1 {
   display: grid;
   place-items: center;
   border-radius: 24px;
-  background: linear-gradient(135deg, #7db4ff 0%, var(--blue) 100%);
+  background: linear-gradient(135deg, #7db4ff 0%, #2f6fed 100%); /* the logo: the same blue in every theme */
   box-shadow: 0 10px 24px rgba(47, 111, 237, 0.32);
 }
 
@@ -145,7 +161,7 @@ input[type='text']:focus,
 input[type='password']:focus {
   background: #fff;
   border-color: var(--blue);
-  box-shadow: 0 0 0 4px rgba(47, 111, 237, 0.15);
+  box-shadow: 0 0 0 4px rgb(var(--accent-rgb) / 0.15);
 }
 
 .input-wrap {
@@ -180,7 +196,7 @@ input[type='password']:focus {
 .eye:focus-visible,
 .check input:focus-visible,
 .btn:focus-visible {
-  outline: 3px solid rgba(47, 111, 237, 0.45);
+  outline: 3px solid rgb(var(--accent-rgb) / 0.45);
   outline-offset: 2px;
 }
 
@@ -218,21 +234,21 @@ input[type='password']:focus {
   font-size: 1rem;
   font-weight: 600;
   color: #fff;
-  background: linear-gradient(180deg, #4a85f5 0%, var(--blue) 100%);
+  background: linear-gradient(180deg, var(--blue-light) 0%, var(--blue) 100%);
   border: 0;
   border-radius: 999px;
-  box-shadow: 0 8px 20px rgba(47, 111, 237, 0.3);
+  box-shadow: 0 8px 20px rgb(var(--accent-rgb) / 0.3);
   cursor: pointer;
   transition: transform 0.1s, box-shadow 0.15s, background 0.15s;
 }
 
 .btn:hover:not(:disabled) {
-  background: linear-gradient(180deg, #3f7cf0 0%, var(--blue-dark) 100%);
+  background: linear-gradient(180deg, var(--blue-light-hover) 0%, var(--blue-dark) 100%);
 }
 
 .btn:active:not(:disabled) {
   transform: translateY(1px);
-  box-shadow: 0 4px 12px rgba(47, 111, 237, 0.3);
+  box-shadow: 0 4px 12px rgb(var(--accent-rgb) / 0.3);
 }
 
 .btn:disabled {
