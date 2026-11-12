@@ -120,6 +120,18 @@ export const getMe = () =>
     () => savedValue('me'),
   )
 
+// Friends: { friends, incoming, outgoing }, each a list of { id, username }.
+// `id` is the friendship (or request) id used to accept or remove it.
+export const getFriends = () =>
+  withSavedCopy(
+    () => request('/api/friends/'),
+    (data) => saveValue('friends', data),
+    () => savedValue('friends'),
+  )
+export const sendFriendRequest = (username) => request('/api/friends/', { method: 'POST', body: { username } })
+export const acceptFriend = (id) => request(`/api/friends/${id}/accept/`, { method: 'POST' })
+export const removeFriend = (id) => request(`/api/friends/${id}/`, { method: 'DELETE' })
+
 export const createEvent = (data) => request('/api/events/', { method: 'POST', body: data })
 export const updateEvent = (id, data) => request(`/api/events/${id}/`, { method: 'PATCH', body: data })
 export const deleteEvent = (id) => request(`/api/events/${id}/`, { method: 'DELETE' })
