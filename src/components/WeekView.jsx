@@ -87,8 +87,8 @@ export default function WeekView({ cursor, events, today, now, holidays, onAddAt
                       <button
                         key={event.id}
                         type="button"
-                        className="block"
-                        title={`${event.title}: ${timeLabel(event, day).range}`}
+                        className={event.invite ? 'block invite' : 'block'}
+                        title={`${event.invite ? 'Invite: ' : ''}${event.title}: ${timeLabel(event, day).range}`}
                         style={{
                           top: ((start - dayStart) / HOUR_MS) * HOUR_PX,
                           height,
@@ -96,7 +96,7 @@ export default function WeekView({ cursor, events, today, now, holidays, onAddAt
                           '--lines': Math.max(Math.floor((height - 4) / 12), 1),
                           left: `calc(${(lane / lanes) * 100}% + 2px)`,
                           width: `calc(${100 / lanes}% - 4px)`,
-                          background: color.bg,
+                          backgroundColor: color.bg,
                           color: color.text,
                           borderLeftColor: color.edge,
                         }}

@@ -1617,3 +1617,42 @@ fieldset.plain:disabled .swatch {
   white-space: nowrap;
   border: 0;
 }
+
+/* ---------- Invites in the calendar ---------- */
+
+/* An invite I haven't answered: faded, with light stripes, so it's clearly
+   not in my calendar yet but clashes are easy to spot. */
+.chip.invite,
+.block.invite,
+.agenda-card.invite,
+.day-card.invite {
+  background-image: repeating-linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.55) 0 5px,
+    transparent 5px 10px
+  );
+  opacity: 0.72;
+}
+
+.chip.invite:hover,
+.block.invite:hover,
+.agenda-card.invite:hover,
+.day-card.invite:hover {
+  opacity: 0.9;
+}
+
+.invite-tag {
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 2px 8px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--blue-dark);
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 999px;
+}
+
+.day-card .invite-tag {
+  font-size: 0.74rem;
+  opacity: 1;
+}

@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { createEvent, deleteEvent, errorMessages, leaveEvent, updateEvent } from '../api.js'
+import {
+  acceptInvite, createEvent, declineInvite, deleteEvent, errorMessages, leaveEvent, updateEvent,
+} from '../api.js'
 import { CAKE, COLOR_KEYS } from '../colors.js'
 import { toInputValue } from '../dates.js'
 
@@ -19,6 +21,8 @@ const REMINDERS = [
 // it can be shared with; `onOpenFriends` opens the Friends window.
 export default function EventModal({ event, me, offline, friends = [], onOpenFriends, defaults, onClose, onSaved }) {
   const sharedWithMe = Boolean(event && me && event.owner_username !== me.username)
+  // An invite I haven't answered yet (it's shown faded in the calendar).
+  const invite = Boolean(event?.invite)
   const readOnly = sharedWithMe || offline
 
   const [title, setTitle] = useState(event?.title ?? '')
@@ -96,6 +100,18 @@ export default function EventModal({ event, me, offline, friends = [], onOpenFri
     }
   }
 
+  // An invite: accept puts it in my calendar, decline keeps it out. The owner is told either way.
+  async function answerInvite(accept) {
+    setSaving(true)
+    try {
+      await (accept ? acceptInvite(event.id) : declineInvite(event.id))
+      onSaved()
+    } catch (err) {
+      setErrors(errorMessages(err))
+      setSaving(false)
+    }
+  }
+
   async function handleDelete() {
     setSaving(true)
     try {
@@ -108,14 +124,19 @@ export default function EventModal({ event, me, offline, friends = [], onOpenFri
     }
   }
 
-  const heading = readOnly ? 'Event' : event ? 'Edit event' : 'New event'
+  const heading = invite ? 'Invite' : readOnly ? 'Event' : event ? 'Edit event' : 'New event'
 
   return (
     <div className="backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <form className="modal" role="dialog" aria-modal="true" aria-label={heading} onSubmit={handleSave}>
         <h2>{heading}</h2>
 
-        {sharedWithMe && (
+        {invite && (
+          <p className="note">
+            <b>{event.owner_username}</b> invited you. Accept to add it to your calendar.
+          </p>
+        )}
+        {sharedWithMe && !invite && (
           <p className="note">
             Shared with you by <b>{event.owner_username}</b>. You can look at it, but only they can change it.
           </p>
@@ -233,20 +254,33 @@ export default function EventModal({ event, me, offline, friends = [], onOpenFri
               <button type="button" className="btn-text" onClick={() => setConfirmingDelete(false)}>No</button>
             </span>
           )}
-          {sharedWithMe && !offline && !confirmingLeave && (
+          {invite && !offline && (
+            <>
+              <button type="button" className="btn-text" onClick={onClose}>Later</button>
+              <span className="spacer" />
+              <button type="button" className="btn-text" onClick={() => answerInvite(false)} disabled={saving}>
+                Decline
+              </button>
+              <button type="button" className="btn small" onClick={() => answerInvite(true)} disabled={saving}>
+                Accept
+              </button>
+            </>
+          )}
+          {invite && offline && <span className="muted">You can answer once you're back online.</span>}
+          {sharedWithMe && !invite && !offline && !confirmingLeave && (
             <button type="button" className="btn-text danger" onClick={() => setConfirmingLeave(true)} disabled={saving}>
               Remove from my calendar
             </button>
           )}
-          {sharedWithMe && !offline && confirmingLeave && (
+          {sharedWithMe && !invite && !offline && confirmingLeave && (
             <span className="confirm">
               Remove it? {event.owner_username} will be told.
               <button type="button" className="btn-text danger" onClick={handleLeave} disabled={saving}>Yes, remove</button>
               <button type="button" className="btn-text" onClick={() => setConfirmingLeave(false)}>No</button>
             </span>
           )}
-          <span className="spacer" />
-          {!confirmingLeave && (
+          {!(invite && !offline) && <span className="spacer" />}
+          {!confirmingLeave && !(invite && !offline) && (
             <button type="button" className="btn-text" onClick={onClose}>{readOnly ? 'Close' : 'Cancel'}</button>
           )}
           {!readOnly && <button type="submit" className="btn small" disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>}

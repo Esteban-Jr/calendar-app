@@ -23,15 +23,19 @@ export default function Agenda({ day, events, holidays, onEdit, onAdd }) {
           <button
             key={event.id}
             type="button"
-            className="agenda-card"
-            style={{ background: color.bg, color: color.text, borderLeftColor: color.edge }}
+            className={event.invite ? 'agenda-card invite' : 'agenda-card'}
+            style={{ backgroundColor: color.bg, color: color.text, borderLeftColor: color.edge }}
             onClick={() => onEdit(event)}
           >
             <span className="agenda-time">{timeLabel(event, day).range}</span>
             <span className="agenda-title">{event.title}</span>
             {timeLabel(event, day).note && <span className="agenda-place">{timeLabel(event, day).note}</span>}
             {event.location && <span className="agenda-place">{event.location}</span>}
-            {event.mine === false && <span className="agenda-place">Shared by {event.owner_username}</span>}
+            {event.invite ? (
+              <span className="invite-tag">Invite from {event.owner_username} · tap to answer</span>
+            ) : (
+              event.mine === false && <span className="agenda-place">Shared by {event.owner_username}</span>
+            )}
           </button>
         )
       })}
