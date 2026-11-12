@@ -178,6 +178,11 @@
   border-radius: 12px;
 }
 
+.banner.offline {
+  color: var(--text);
+  background: var(--sky);
+}
+
 /* ---------- Month grid ---------- */
 
 .month {

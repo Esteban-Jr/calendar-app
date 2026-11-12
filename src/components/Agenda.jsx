@@ -9,7 +9,7 @@ export default function Agenda({ day, events, holidays, onEdit, onAdd }) {
     <section className="agenda">
       <div className="agenda-head">
         <h2>{formatLongDate(day)}</h2>
-        <button type="button" className="link" onClick={() => onAdd(day)}>+ Add event</button>
+        {onAdd && <button type="button" className="link" onClick={() => onAdd(day)}>+ Add event</button>}
       </div>
       {(holidays[dateKey(day)] || []).map((holiday) => (
         <div key={holiday.title} className="holiday-banner">

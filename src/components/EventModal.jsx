@@ -15,8 +15,10 @@ const REMINDERS = [
 // `event` is an existing event to edit, or null for a new one.
 // `defaults` gives the start/end (Dates) and colour for a new event.
 // `me` is the person logged in; an event someone else shared can only be viewed.
-export default function EventModal({ event, me, defaults, onClose, onSaved }) {
-  const readOnly = Boolean(event && me && event.owner_username !== me.username)
+// Offline, every event can only be viewed.
+export default function EventModal({ event, me, offline, defaults, onClose, onSaved }) {
+  const sharedWithMe = Boolean(event && me && event.owner_username !== me.username)
+  const readOnly = sharedWithMe || offline
 
   const [title, setTitle] = useState(event?.title ?? '')
   const [start, setStart] = useState(toInputValue(new Date(event?.start ?? defaults.start)))
@@ -104,10 +106,13 @@ export default function EventModal({ event, me, defaults, onClose, onSaved }) {
       <form className="modal" role="dialog" aria-modal="true" aria-label={heading} onSubmit={handleSave}>
         <h2>{heading}</h2>
 
-        {readOnly && (
+        {sharedWithMe && (
           <p className="note">
             Shared with you by <b>{event.owner_username}</b>. You can look at it, but only they can change it.
           </p>
+        )}
+        {offline && !sharedWithMe && (
+          <p className="note">You're offline. You can look at this event, and change it once you're back online.</p>
         )}
 
         <fieldset className="plain" disabled={readOnly}>

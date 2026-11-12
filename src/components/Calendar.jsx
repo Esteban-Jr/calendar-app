@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { getMe, listEvents, listHolidays } from '../api.js'
 import { pickLeastUsed } from '../colors.js'
+import { isOffline, subscribeOffline } from '../offline.js'
 import {
   addDays, addMonths, formatLongDate, formatMonthYear, formatWeekRange, monthGrid, startOfDay,
   weekDays,
@@ -77,6 +78,15 @@ export default function Calendar({ onLogout }) {
   const [holidayError, setHolidayError] = useState(false)
   const requestedYears = useRef(new Set())
   const [me, setMe] = useState(null) // { id, username } of the person logged in
+  // Offline the calendar shows the saved copy and can't be changed.
+  const offline = useSyncExternalStore(subscribeOffline, isOffline)
+  const wasOffline = useRef(offline)
+
+  // Back online: load everything fresh from the server.
+  useEffect(() => {
+    if (wasOffline.current && !offline) setReloadKey((n) => n + 1)
+    wasOffline.current = offline
+  }, [offline])
 
   const [from, to] = rangeFor(view, cursor)
   const rangeStart = from.getTime()
@@ -91,9 +101,12 @@ export default function Calendar({ onLogout }) {
         setLoadError('')
       })
       .catch((err) => {
-        if (!cancelled && err.status !== 401) {
-          setLoadError("Couldn't load your events. Check your connection and try again.")
-        }
+        if (cancelled || err.status === 401) return
+        setLoadError(
+          isOffline()
+            ? "You're offline, and these dates haven't been saved on this device yet."
+            : "Couldn't load your events. Check your connection and try again.",
+        )
       })
     return () => {
       cancelled = true
@@ -171,6 +184,7 @@ export default function Calendar({ onLogout }) {
   }
 
   function openNew(day, hour = 9) {
+    if (offline) return
     const start = new Date(day.getFullYear(), day.getMonth(), day.getDate(), hour, 0)
     const end = new Date(start.getTime() + 60 * 60 * 1000)
     setModal({ defaults: { start, end, color: pickLeastUsed(shownEvents) } })
@@ -182,6 +196,8 @@ export default function Calendar({ onLogout }) {
   }
 
   const edit = (event) => setModal({ event })
+  // Offline the views hide their "+ Add event" buttons (they get no onAdd).
+  const addIfOnline = offline ? undefined : openNew
   const unit = { month: 'month', week: 'week', day: 'day' }[view]
 
   return (
@@ -219,11 +235,16 @@ export default function Calendar({ onLogout }) {
               </button>
             ))}
           </div>
-          <button type="button" className="btn small" onClick={() => openNew(cursor)}>+ Add event</button>
+          {!offline && <button type="button" className="btn small" onClick={() => openNew(cursor)}>+ Add event</button>}
         </div>
 
+        {offline && (
+          <p className="banner offline" role="status">
+            You're offline. Showing your saved calendar; adding and editing will work again when you're back online.
+          </p>
+        )}
         {loadError && <p className="banner" role="alert">{loadError}</p>}
-        {showHolidays && holidayError && (
+        {showHolidays && holidayError && !offline && (
           <p className="banner" role="status">Couldn't load the holidays right now. Your events are fine.</p>
         )}
 
@@ -236,10 +257,10 @@ export default function Calendar({ onLogout }) {
               holidays={holidays}
               onSelect={setCursor}
               onOpenDay={openDay}
-              onAdd={openNew}
+              onAdd={addIfOnline}
               onEdit={edit}
             />
-            <Agenda day={cursor} events={shownEvents} holidays={holidays} onAdd={openNew} onEdit={edit} />
+            <Agenda day={cursor} events={shownEvents} holidays={holidays} onAdd={addIfOnline} onEdit={edit} />
           </>
         )}
 
@@ -250,7 +271,7 @@ export default function Calendar({ onLogout }) {
             today={today}
             now={now}
             holidays={holidays}
-            onAddAt={openNew}
+            onAddAt={addIfOnline}
             onEdit={edit}
             onOpenDay={openDay}
           />
@@ -263,7 +284,7 @@ export default function Calendar({ onLogout }) {
             today={today}
             holidays={holidays}
             onSelect={setCursor}
-            onAdd={openNew}
+            onAdd={addIfOnline}
             onEdit={edit}
           />
         )}
@@ -271,7 +292,7 @@ export default function Calendar({ onLogout }) {
 
       <Footer />
 
-      <button type="button" className="fab" aria-label="Add event" onClick={() => openNew(cursor)}>+</button>
+      {!offline && <button type="button" className="fab" aria-label="Add event" onClick={() => openNew(cursor)}>+</button>}
 
       <ReminderBanners banners={banners} onDismiss={dismiss} onView={(event) => setModal({ event })} />
 
@@ -279,6 +300,7 @@ export default function Calendar({ onLogout }) {
         <EventModal
           event={modal.event ?? null}
           me={me}
+          offline={offline}
           defaults={modal.defaults}
           onClose={() => setModal(null)}
           onSaved={() => {

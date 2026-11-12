@@ -36,17 +36,19 @@ export default function MonthView({ cursor, events, today, holidays, onSelect, o
                 >
                   {day.getDate()}
                 </button>
-                <button
-                  type="button"
-                  className="cell-add"
-                  aria-label={`Add an event on ${day.toDateString()}`}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onAdd(day)
-                  }}
-                >
-                  +
-                </button>
+                {onAdd && (
+                  <button
+                    type="button"
+                    className="cell-add"
+                    aria-label={`Add an event on ${day.toDateString()}`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onAdd(day)
+                    }}
+                  >
+                    +
+                  </button>
+                )}
               </div>
               {(holidays[dateKey(day)] || []).map((holiday) => (
                 <div key={holiday.title} className="holiday" title={holiday.name}>{holiday.title}</div>

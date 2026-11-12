@@ -30,7 +30,7 @@ export default function DayView({ cursor, events, today, holidays, onSelect, onA
 
       <div className="day-head">
         <h2>{formatLongDate(cursor)}</h2>
-        <button type="button" className="link" onClick={() => onAdd(cursor)}>+ Add event</button>
+        {onAdd && <button type="button" className="link" onClick={() => onAdd(cursor)}>+ Add event</button>}
       </div>
 
       {(holidays[dateKey(cursor)] || []).map((holiday) => (
