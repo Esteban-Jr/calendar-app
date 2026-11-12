@@ -12,9 +12,15 @@ createRoot(document.getElementById('root')).render(
   </StrictMode>,
 )
 
-// The service worker lets phones show notifications and makes the app installable.
+// The service worker lets phones show notifications, makes the app installable
+// and lets it open offline. Only in the built app: during development it would
+// keep serving old copies of files you have just changed.
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {})
-  })
+  if (import.meta.env.PROD) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {})
+    })
+  } else {
+    navigator.serviceWorker.getRegistrations().then((all) => all.forEach((r) => r.unregister()))
+  }
 }

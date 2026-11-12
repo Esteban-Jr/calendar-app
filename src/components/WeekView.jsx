@@ -29,7 +29,7 @@ export default function WeekView({ cursor, events, today, now, holidays, onAddAt
 
   function handleSlotClick(day, event) {
     const y = event.clientY - event.currentTarget.getBoundingClientRect().top
-    onAddAt(day, Math.min(Math.max(Math.floor(y / HOUR_PX), 0), 23))
+    onAddAt?.(day, Math.min(Math.max(Math.floor(y / HOUR_PX), 0), 23))
   }
 
   return (

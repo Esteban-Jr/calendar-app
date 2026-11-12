@@ -1,5 +1,6 @@
 // Every call to the Calendar API goes through this file.
 import { getToken } from './auth.js'
+import { saveEvents, savedEvents, saveValue, savedValue, setOffline } from './offline.js'
 
 export class ApiError extends Error {
   constructor(status, body) {
@@ -56,14 +57,21 @@ export function setUnauthorizedHandler(handler) {
 
 async function request(path, { method = 'GET', body, params } = {}) {
   const url = params ? `${path}?${new URLSearchParams(params)}` : path
-  const response = await fetch(url, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Token ${getToken()}`,
-    },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  })
+  let response
+  try {
+    response = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Token ${getToken()}`,
+      },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    })
+  } catch (err) {
+    setOffline(true) // the request never reached the server
+    throw err
+  }
+  setOffline(false)
   if (response.status === 401) {
     onUnauthorized()
     throw new ApiError(401, null)
@@ -74,17 +82,43 @@ async function request(path, { method = 'GET', body, params } = {}) {
   return data
 }
 
-// Events that overlap the range [start, end]. Dates are JavaScript Dates.
-export function listEvents(start, end) {
-  return request('/api/events/', {
-    params: { start: start.toISOString(), end: end.toISOString() },
-  })
+// Read calls keep a copy of what they get. If the server can't be reached
+// (no internet), they answer from that copy instead, when there is one.
+async function withSavedCopy(load, save, saved) {
+  try {
+    const data = await load()
+    save(data)
+    return data
+  } catch (err) {
+    if (err instanceof ApiError) throw err // the server answered: a real error
+    const copy = saved()
+    if (copy === null) throw err
+    return copy
+  }
 }
 
-// Colombian public holidays for a year: [{ date: '2026-10-12', title, name }]
-export const listHolidays = (year) => request('/api/holidays/', { params: { year } })
+// Events that overlap the range [start, end]. Dates are JavaScript Dates.
+export const listEvents = (start, end) =>
+  withSavedCopy(
+    () => request('/api/events/', { params: { start: start.toISOString(), end: end.toISOString() } }),
+    (list) => saveEvents(start, end, list),
+    () => savedEvents(start, end),
+  )
 
-export const getMe = () => request('/api/me/')
+// Colombian public holidays for a year: [{ date: '2026-10-12', title, name }]
+export const listHolidays = (year) =>
+  withSavedCopy(
+    () => request('/api/holidays/', { params: { year } }),
+    (list) => saveValue(`holidays-${year}`, list),
+    () => savedValue(`holidays-${year}`),
+  )
+
+export const getMe = () =>
+  withSavedCopy(
+    () => request('/api/me/'),
+    (me) => saveValue('me', me),
+    () => savedValue('me'),
+  )
 
 export const createEvent = (data) => request('/api/events/', { method: 'POST', body: data })
 export const updateEvent = (id, data) => request(`/api/events/${id}/`, { method: 'PATCH', body: data })

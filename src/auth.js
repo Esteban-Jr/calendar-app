@@ -1,3 +1,5 @@
+import { clearSaved } from './offline.js'
+
 // The login token lives in localStorage when "Remember me" is ticked
 // (survives closing the browser) and in sessionStorage otherwise
 // (gone when the tab closes).
@@ -25,6 +27,7 @@ export function saveToken(token, remember) {
 }
 
 export function clearToken() {
+  clearSaved() // signing out also removes the offline copy of the calendar
   try {
     localStorage.removeItem(KEY)
     sessionStorage.removeItem(KEY)
