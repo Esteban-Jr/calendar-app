@@ -37,16 +37,11 @@ function readShowHolidays() {
   }
 }
 
+// The app's logo (the white lion) on the blue rounded square.
 function LogoMark() {
   return (
     <span className="mark" aria-hidden="true">
-      <svg viewBox="0 0 64 64" width="22" height="22">
-        <rect x="12" y="16" width="40" height="36" rx="7" fill="#fff" />
-        <rect x="12" y="16" width="40" height="11" rx="5" fill="#cfe2ff" />
-        <circle cx="23" cy="38" r="3.6" fill="#ffb3c7" />
-        <circle cx="32" cy="38" r="3.6" fill="#b9e8cf" />
-        <circle cx="41" cy="38" r="3.6" fill="#ffe08a" />
-      </svg>
+      <img src="/logo-lion.png" alt="" width="26" height="26" />
     </span>
   )
 }

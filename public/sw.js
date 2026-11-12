@@ -5,8 +5,10 @@
 // (3) shows reminders pushed by the server while the app is closed.
 // API calls (/api/...) are never cached here: they always go to the server.
 
-const CACHE = 'calendar-app-v1'
-const SHELL = ['/', '/manifest.webmanifest', '/favicon.svg', '/icon-192.png', '/apple-touch-icon.png']
+// Change the version when files keep their name but change (like the icons),
+// so phones drop their saved copies and fetch the new ones.
+const CACHE = 'calendar-app-v2'
+const SHELL = ['/', '/manifest.webmanifest', '/favicon.png', '/icon-192.png', '/apple-touch-icon.png', '/logo-lion.png']
 
 // The scripts, styles and fonts a page uses. Their names change on every
 // build, so read them from the page (and its stylesheet) itself.
