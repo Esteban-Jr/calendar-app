@@ -399,6 +399,8 @@
   max-height: calc(100vh - 32px); /* older phones without dvh */
   max-height: calc(100dvh - 32px);
   overflow-y: auto;
+  /* Only up and down: nothing inside should ever make it slide sideways. */
+  overflow-x: hidden;
   /* Scrolling inside the window doesn't scroll the calendar behind it. */
   overscroll-behavior: contain;
   padding: 24px 22px 0;
@@ -439,6 +441,21 @@ textarea {
 input[type='datetime-local'],
 select {
   height: 48px;
+}
+
+/* iPhone Safari gives date/time boxes a minimum width of their own and
+   ignores width: 100%, so they poke out of narrow windows. Drop its
+   built-in look so they size like the other boxes. */
+input[type='datetime-local'] {
+  display: block;
+  min-width: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  text-align: left;
+}
+
+input[type='datetime-local']::-webkit-date-and-time-value {
+  text-align: left;
 }
 
 textarea {
@@ -1265,6 +1282,18 @@ fieldset.plain:disabled .swatch {
   background: var(--surface);
   border-radius: 14px;
   box-shadow: 0 12px 36px rgba(20, 33, 61, 0.22);
+}
+
+/* Phones: the bell sits near the middle of the top bar, so a pop-up lined up
+   with it would hang off the left edge. Show it across the screen instead. */
+@media (max-width: 760px) {
+  .bell-hint {
+    position: fixed;
+    top: 64px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+  }
 }
 
 .bell-hint .btn-text {
