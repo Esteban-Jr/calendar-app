@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
-import { getFriends, getMe, listEvents, listHolidays } from '../api.js'
+import { getFriends, getMe, getNotifications, listEvents, listHolidays, markNotificationsRead } from '../api.js'
 import { pickLeastUsed } from '../colors.js'
 import { isOffline, subscribeOffline } from '../offline.js'
 import { enablePush } from '../push.js'
@@ -15,7 +15,8 @@ import DayView from './DayView.jsx'
 import EventModal from './EventModal.jsx'
 import MonthView from './MonthView.jsx'
 import ReminderBanners from './ReminderBanners.jsx'
-import ReminderBell from './ReminderBell.jsx'
+import NotificationsButton from './NotificationsButton.jsx'
+import NotificationsModal from './NotificationsModal.jsx'
 import WeekView from './WeekView.jsx'
 import useReminders from '../useReminders.js'
 import '../calendar.css'
@@ -132,6 +133,25 @@ export default function Calendar({ onLogout }) {
     loadFriends()
   }, [reloadKey])
 
+  // Notifications ({ unread, notifications }). Looked at again whenever the
+  // app comes back to the front, since they can arrive while it's closed.
+  const [noteData, setNoteData] = useState(null)
+  const [showNotes, setShowNotes] = useState(false)
+
+  useEffect(() => {
+    const load = () => getNotifications().then(setNoteData).catch(() => {})
+    const onVisible = () => document.visibilityState === 'visible' && load()
+    load()
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [reloadKey])
+
+  function markNotesRead() {
+    markNotificationsRead()
+      .then(() => setNoteData((data) => data && { ...data, unread: 0, notifications: data.notifications.map((n) => ({ ...n, read: true })) }))
+      .catch(() => {})
+  }
+
   // Mark events that belong to somebody else (shared with me).
   const shownEvents = useMemo(
     () => events.map((event) => ({ ...event, mine: !me || event.owner_username === me.username })),
@@ -221,7 +241,7 @@ export default function Calendar({ onLogout }) {
         <div className="brand"><LogoMark /> <span className="brand-name">My Calendar</span></div>
         <div className="top-actions">
           <FriendsButton waiting={friendData?.incoming.length ?? 0} onClick={() => setShowFriends(true)} />
-          <ReminderBell />
+          <NotificationsButton unread={noteData?.unread ?? 0} onClick={() => setShowNotes(true)} />
           <button type="button" className={showHolidays ? 'pill holiday-toggle on' : 'pill holiday-toggle'} aria-pressed={showHolidays} onClick={toggleHolidays}>
             Holidays
           </button>
@@ -329,6 +349,10 @@ export default function Calendar({ onLogout }) {
             setReloadKey((n) => n + 1)
           }}
         />
+      )}
+
+      {showNotes && (
+        <NotificationsModal data={noteData} onOpened={markNotesRead} onClose={() => setShowNotes(false)} />
       )}
 
       {showFriends && (
