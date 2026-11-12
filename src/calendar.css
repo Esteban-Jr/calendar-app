@@ -1338,14 +1338,50 @@ fieldset.plain:disabled .swatch {
   border-bottom: 1px solid #edf2fb;
 }
 
-.note-list li > span {
+.note-body {
   flex: 1;
   min-width: 0;
   overflow-wrap: anywhere;
 }
 
-.note-list li.unread > span {
+.note-list li.unread .note-text {
   font-weight: 600;
+}
+
+/* An invite: when it is, then Accept / Decline (or the answer). */
+.invite-when {
+  margin: 2px 0 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.invite-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.invite-answer {
+  margin: 6px 0 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.invite-answer.accepted {
+  color: #1f7a4d;
+}
+
+.invite-note {
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+}
+
+.invite-error {
+  margin: 6px 0 0;
+  font-size: 0.82rem;
+  color: var(--danger);
 }
 
 .note-list li.unread::before {
@@ -1353,7 +1389,9 @@ fieldset.plain:disabled .swatch {
   flex: none;
   width: 8px;
   height: 8px;
-  align-self: center;
+  /* Next to the first line, also when an invite makes the item taller. */
+  align-self: flex-start;
+  margin-top: 0.55em;
   background: var(--blue);
   border-radius: 50%;
 }

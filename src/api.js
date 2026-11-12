@@ -144,6 +144,16 @@ export const markNotificationsRead = () => request('/api/notifications/read/', {
 // Take an event someone shared with me off my calendar (the owner is told).
 export const leaveEvent = (id) => request(`/api/events/${id}/leave/`, { method: 'POST' })
 
+// Invites: events shared with me that I haven't answered yet. They're not in
+// my calendar until I accept. Accepting returns the event; the owner is told
+// either way.
+export const listInvites = () => request('/api/events/invites/')
+export const acceptInvite = (id) => request(`/api/events/${id}/accept/`, { method: 'POST' })
+export const declineInvite = (id) => request(`/api/events/${id}/decline/`, { method: 'POST' })
+// Owner only: send a fresh invite to someone who declined.
+export const inviteAgain = (id, username) =>
+  request(`/api/events/${id}/invite-again/`, { method: 'POST', body: { username } })
+
 // Push notifications (reminders while the app is closed).
 export const getPushKey = () => request('/api/push/key/')
 export const savePushSubscription = (subscription) =>

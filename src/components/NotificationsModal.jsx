@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { acceptInvite, declineInvite, errorMessages } from '../api.js'
+import { formatTime } from '../dates.js'
 import { enablePush, pushIsOn } from '../push.js'
 import { notificationsSupported, showSystemNotification } from '../reminders.js'
 
@@ -11,6 +13,61 @@ function ago(iso) {
   if (hours < 24) return `${hours} h ago`
   if (hours < 48) return 'yesterday'
   return new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+}
+
+const dayDate = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
+
+// "Sat 14 Nov · 7:00 PM"
+function when(iso) {
+  return `${dayDate.format(new Date(iso))} · ${formatTime(iso)}`
+}
+
+const ANSWERED = {
+  accepted: '✓ You accepted. It’s in your calendar.',
+  declined: 'You declined.',
+  cancelled: 'This invite was cancelled.',
+}
+
+// An invite in the list: when the event is, and Accept / Decline while it's
+// still waiting for an answer.
+function Invite({ note, status, offline, onAnswer }) {
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  async function answer(accept) {
+    setBusy(true)
+    setError('')
+    try {
+      await (accept ? acceptInvite(note.event) : declineInvite(note.event))
+      onAnswer(note.event, accept ? 'accepted' : 'declined')
+    } catch (err) {
+      // e.g. the owner cancelled it a moment ago: load the latest instead.
+      setError(errorMessages(err).join(' '))
+      onAnswer(note.event, null)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="invite">
+      {note.event_start && <p className="invite-when">{when(note.event_start)}</p>}
+      {status === 'waiting' ? (
+        <div className="invite-actions">
+          <button type="button" className="btn-text" disabled={busy || offline} onClick={() => answer(false)}>
+            Decline
+          </button>
+          <button type="button" className="btn small" disabled={busy || offline} onClick={() => answer(true)}>
+            Accept
+          </button>
+        </div>
+      ) : (
+        <p className={`invite-answer ${status}`}>{ANSWERED[status]}</p>
+      )}
+      {offline && status === 'waiting' && <p className="muted invite-note">You can answer once you're back online.</p>}
+      {error && <p className="invite-error" role="alert">{error}</p>}
+    </div>
+  )
 }
 
 // Whether this device shows phone notifications, and a button to turn them on.
@@ -57,9 +114,17 @@ function PhoneNotifications() {
 }
 
 // The Notifications window: what happened (e.g. "ben removed “Dinner” from
-// their calendar"), newest first. Opening it marks everything as read.
-export default function NotificationsModal({ data, onOpened, onClose }) {
+// their calendar"), newest first, and invites to answer. Opening it marks
+// everything as read. `onAnswered` reloads the calendar after an answer.
+export default function NotificationsModal({ data, offline, onOpened, onAnswered, onClose }) {
   const [unreadIds] = useState(() => new Set((data?.notifications ?? []).filter((n) => !n.read).map((n) => n.id)))
+  // Answers given in this window, shown straight away: event id -> status.
+  const [answers, setAnswers] = useState({})
+
+  function answered(eventId, status) {
+    if (status) setAnswers((previous) => ({ ...previous, [eventId]: status }))
+    onAnswered()
+  }
 
   useEffect(() => {
     if (unreadIds.size) onOpened() // mark read, but keep them highlighted while the window is open
@@ -81,12 +146,22 @@ export default function NotificationsModal({ data, onOpened, onClose }) {
         <h2>Notifications</h2>
 
         {notifications.length === 0 ? (
-          <p className="muted">Nothing yet. You'll see here when a friend removes an event you shared, or deletes one they shared with you.</p>
+          <p className="muted">Nothing yet. Invites to your friends' events, and news about events you share, show up here.</p>
         ) : (
           <ul className="note-list">
             {notifications.map((n) => (
               <li key={n.id} className={unreadIds.has(n.id) ? 'unread' : ''}>
-                <span>{n.message}</span>
+                <div className="note-body">
+                  <span className="note-text">{n.message}</span>
+                  {n.kind === 'invited' && (
+                    <Invite
+                      note={n}
+                      status={answers[n.event] ?? n.invite_status}
+                      offline={offline}
+                      onAnswer={answered}
+                    />
+                  )}
+                </div>
                 <time dateTime={n.created}>{ago(n.created)}</time>
               </li>
             ))}

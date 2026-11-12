@@ -411,7 +411,14 @@ export default function Calendar({ onLogout }) {
       )}
 
       {showNotes && (
-        <NotificationsModal data={noteData} onOpened={markNotesRead} onClose={() => setShowNotes(false)} />
+        <NotificationsModal
+          data={noteData}
+          offline={offline}
+          onOpened={markNotesRead}
+          // Accepting puts the event in the calendar: load everything again.
+          onAnswered={() => setReloadKey((n) => n + 1)}
+          onClose={() => setShowNotes(false)}
+        />
       )}
 
       {showFriends && (
