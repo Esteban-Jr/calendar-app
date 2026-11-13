@@ -3,6 +3,7 @@ import { getFriends, getMe, getNotifications, listEvents, listHolidays, listInvi
 import { pickLeastUsed } from '../colors.js'
 import { isOffline, subscribeOffline } from '../offline.js'
 import { enablePush } from '../push.js'
+import { applyTheme } from '../theme.js'
 import {
   addDays, addMonths, formatLongDate, formatMonthYear, formatWeekRange, monthGrid, startOfDay,
   weekDays,
@@ -131,7 +132,12 @@ export default function Calendar({ onLogout }) {
   }, [rangeStart, rangeEnd, reloadKey]) // eslint-disable-line react-hooks/exhaustive-deps -- loadEvents only uses these
 
   useEffect(() => {
-    getMe().then(setMe).catch(() => {}) // a 401 is handled globally; anything else just means no "shared" marks
+    getMe()
+      .then((data) => {
+        setMe(data)
+        if (data.theme) applyTheme(data.theme) // the theme saved on my account wins
+      })
+      .catch(() => {}) // a 401 is handled globally; anything else just means no "shared" marks
     // Notifications already allowed on this device: make sure the server can push
     // reminders here (and knows it's this person signed in now).
     enablePush().catch(() => {})
@@ -431,8 +437,9 @@ export default function Calendar({ onLogout }) {
           me={me}
           offline={offline}
           onChanged={(updated) => {
-            setMe(updated) // "mine" marks and reminders use my username
-            setReloadKey((n) => n + 1)
+            const renamed = updated.username !== me?.username
+            setMe(updated)
+            if (renamed) setReloadKey((n) => n + 1) // "mine" marks and reminders use my username
           }}
           onLogout={onLogout}
           onClose={() => setShowAccount(false)}

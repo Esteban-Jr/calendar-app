@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { errorMessages, updateMe } from '../api.js'
 import { formatTime } from '../dates.js'
+import { THEMES, applyTheme } from '../theme.js'
 
 const dayDate = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
 
@@ -16,6 +17,52 @@ export function AccountButton({ me, onClick }) {
     <button type="button" className="pill account-btn" aria-label="Account" title="Account" onClick={onClick}>
       <span aria-hidden="true">{initial}</span>
     </button>
+  )
+}
+
+// Pick the calendar's look. It changes straight away and is saved on my
+// account (so my other devices use it too). If saving fails, it still stays
+// on this device.
+function ThemePicker({ me, offline, onChanged }) {
+  const [current, setCurrent] = useState(me?.theme ?? document.documentElement.dataset.theme ?? 'default')
+  const [problem, setProblem] = useState('')
+
+  async function choose(id) {
+    setCurrent(applyTheme(id))
+    setProblem('')
+    if (offline || !me) {
+      setProblem("Saved on this device. It'll go to your account next time you change it online.")
+      return
+    }
+    try {
+      onChanged(await updateMe({ theme: id }))
+    } catch {
+      setProblem("Couldn't save it to your account, but it stays on this device.")
+    }
+  }
+
+  return (
+    <div className="field">
+      <span>Theme</span>
+      <div className="themes" role="radiogroup" aria-label="Theme">
+        {THEMES.map((theme) => (
+          <button
+            key={theme.id}
+            type="button"
+            role="radio"
+            aria-checked={current === theme.id}
+            className={current === theme.id ? 'theme-choice on' : 'theme-choice'}
+            onClick={() => choose(theme.id)}
+          >
+            <span className="theme-swatch" style={{ background: theme.swatch }} aria-hidden="true">
+              <i style={{ background: theme.dot }} />
+            </span>
+            <span>{current === theme.id && <span aria-hidden="true">✓ </span>}{theme.name}</span>
+          </button>
+        ))}
+      </div>
+      {problem && <p className="muted account-hint">{problem}</p>}
+    </div>
   )
 }
 
@@ -122,6 +169,8 @@ export default function AccountModal({ me, offline, onChanged, onLogout, onClose
             </div>
           </div>
         )}
+
+        <ThemePicker me={me} offline={offline} onChanged={onChanged} />
 
         <div className="modal-actions">
           <button type="button" className="btn-text danger" onClick={onLogout}>Sign out</button>

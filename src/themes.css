@@ -1,0 +1,131 @@
+/* Calendar themes (#30). Each theme is one block: it swaps the colour
+   variables from index.css and adds its own artwork behind the calendar.
+   Cards and windows stay light in every theme, so text is always easy to read.
+   The theme is chosen in the Account window; src/theme.js puts its name on
+   <html data-theme="...">. All artwork here is original, drawn with CSS/SVG. */
+
+/* The artwork layer sits behind everything in the calendar. */
+.app {
+  position: relative;
+  isolation: isolate;
+}
+
+.app::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* A small icon before the title, for themes that have one. */
+[data-theme] .title::before {
+  content: '';
+  display: inline-block;
+  width: 0.85em;
+  height: 0.85em;
+  margin-right: 0.4em;
+  vertical-align: -0.06em;
+  background: var(--title-icon) center / contain no-repeat;
+}
+
+[data-theme='default'] .title::before {
+  display: none;
+}
+
+/* ---------- Faith: warm cream and bronze, soft light from above ---------- */
+
+[data-theme='faith'] {
+  --bg: #fdf8ee;
+  --bg-deep: #f5e6c8;
+  --sky: #fbf0da;
+  --border: #eedfc0;
+  --blue: #9a6414; /* bronze: white text on it is easy to read (contrast 5:1) */
+  --blue-dark: #7c4f0e;
+  --blue-light: #b37a24;
+  --blue-light-hover: #a66e1c;
+  --blue-soft: #e2bb6a;
+  --accent-rgb: 154 100 20;
+  --tint-soft: #fdf8ee;
+  --tint-hover: #fdf7ea;
+  --tint-today: #fdf4e2;
+  --tint-selected: #fbefd6;
+  --tint-strong: #f6e3bb;
+  --shadow: 0 18px 50px rgba(154, 100, 20, 0.12), 0 2px 8px rgba(60, 40, 10, 0.05);
+
+  --app-bg:
+    radial-gradient(70% 45% at 50% -8%, rgba(255, 224, 150, 0.85) 0%, transparent 70%),
+    radial-gradient(40% 30% at 0% 100%, rgba(245, 215, 170, 0.5) 0%, transparent 70%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
+
+  /* A plain cross with a soft halo. */
+  --title-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='9' r='8' fill='%23f3d58f' opacity='.55'/%3E%3Cpath d='M10.6 2h2.8v6.2H19V11h-5.6v11h-2.8V11H5V8.2h5.6z' fill='%239a6414'/%3E%3C/svg%3E");
+}
+
+/* Light rays fanning down from the top, fading out towards the middle. */
+[data-theme='faith'] .app::before {
+  background: repeating-conic-gradient(
+    from 180deg at 50% -6%,
+    rgba(255, 210, 120, 0.22) 0deg 2.5deg,
+    transparent 2.5deg 9deg
+  );
+  -webkit-mask-image: radial-gradient(85% 65% at 50% 0%, #000 0%, transparent 78%);
+  mask-image: radial-gradient(85% 65% at 50% 0%, #000 0%, transparent 78%);
+}
+
+/* ---------- The theme picker (Account window) ---------- */
+
+.themes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 10px;
+  margin: 6px 0 4px;
+}
+
+.theme-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 500;
+  color: var(--text);
+  text-align: left;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  cursor: pointer;
+}
+
+.theme-choice.on {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.15);
+}
+
+.theme-choice:focus-visible {
+  outline: 3px solid rgb(var(--accent-rgb) / 0.45);
+  outline-offset: 2px;
+}
+
+/* A tiny picture of the theme: its background with an accent dot. */
+.theme-swatch {
+  position: relative;
+  height: 54px;
+  border-radius: 11px;
+  overflow: hidden;
+}
+
+.theme-swatch i {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+}
+
+.theme-choice > span:last-child {
+  padding: 0 4px 2px;
+}
